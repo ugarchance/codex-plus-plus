@@ -90,6 +90,16 @@ kaydı olmayıp yan dizinde duran 3 dosyayı. Referans başlıktan yeniden kuruy
 worker kaynağı olduğu gibi kopyaladı. **"Kaynakta ne varsa o" mantığı
 "kayıtta ne yazıyorsa o" mantığından daha sağlam.**
 
+### Rehberin sahada karşılığı
+
+Aynı worker oturumunda üç ardışık gerçek görev bu şablonla verildi: bir hata
+düzeltmesi, iki yeni modül + iskelet, bir kurulum betiği entegrasyonu.
+Sırasıyla 1, 2 ve 3 turda bitti; üçü de bağımsız doğrulamayı düzeltme turuna
+gerek kalmadan geçti. Şablonun dışına çıkılan tek yer olmadı.
+
+Doğrulamayı yine de kendin yap. Worker'ın raporundaki çıktılar doğru çıktı,
+ama bunu ancak kendi kontrolünü koşturunca bilebilirsin.
+
 ## Gözlenen hata kalıpları
 
 ### 1. Çevre bağlamını keşfetmiyor
