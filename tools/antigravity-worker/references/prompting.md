@@ -6,20 +6,53 @@ farklı brief üslubu denendi, sonuçlar bağımsız olarak doğrulandı.
 ## Deney
 
 Görev: bir Electron `app.asar` dosyasına çapa tabanlı yama uygulayan Node
-CLI'ı yazmak. Kaynak 267 MB, 8564 dosya.
+CLI'ı yazmak. Kaynak 267 MB, 8564 dosya, 402'si `unpacked` işaretli.
 
-| | Tur 1 | Tur 2 |
+### Ölçüm 1 — brief üslubunun etkisi
+
+| | Zayıf brief | Düzeltme turu |
 |---|---|---|
-| Brief üslubu | dosya listesi + birebir çapa | hata kalıpları + numaralı kabul testi |
+| Üslup | dosya listesi + birebir çapa | hata kalıpları + numaralı kabul testi |
 | Süre | 3 dk 53 sn | 12 dk 08 sn |
-| Tur | 2 | 3 |
 | Token | 269k | 560k |
 | Sonuç | 5 dosya doğru, 3 hata | 3/3 hata giderildi |
 | Doğrulama iddiası | abartılı | ham çıktılı |
 
-Tur 1 briefi kötü değildi: dosya yolları, export şekilleri, birebir çapa
-metni, kısıtlar hepsi vardı. Yine de üç hata çıktı. Fark, brief'in **ne
-isteneceğini** anlatıp **neyin yanlış gidebileceğini** anlatmamasıydı.
+Zayıf brief kötü değildi: dosya yolları, export şekilleri, birebir çapa metni,
+kısıtlar hepsi vardı. Yine de üç hata çıktı. Fark, brief'in **ne isteneceğini**
+anlatıp **neyin yanlış gidebileceğini** anlatmamasıydı.
+
+### Ölçüm 2 — tek atış mı, parçalı mı
+
+Aynı görev sıfırdan, iki ayrı temiz çalışma alanında, aynı bilgi miktarıyla.
+Tek fark bilginin teslim biçimi. Sonuçlar bağımsız bir doğrulayıcıyla sınandı
+(başlık kümesi eşitliği, yan artefakt bayt karşılaştırması, yıkıcı bayrak,
+bozuk çapa, belirlilik, yorum yasağı).
+
+| | A: tek atış | B: dört parça |
+|---|---|---|
+| Süre | 6 dk 23 sn | 11 dk 37 sn |
+| Tur | 1 | 4 |
+| Token | 608k | 899k |
+| Bağımsız test | 7/7 | 7/7 |
+| Satır | 293 | 184 |
+| Paketleme çözümü | elle Pickle | `createPackageWithOptions` |
+
+**Sonuç: parçalamak kaliteyi artırmadı.** İkisi de tüm testlerden geçti.
+Parçalı kol 1.8 kat süre ve 1.5 kat token harcadı, karşılığında daha derli
+toplu kod üretti (184 satır).
+
+Parçalamanın gerçek faydası kalite değil, **kurtarılabilirlik**. Bir adım
+patlarsa o adımı tekrar edersin, tüm görevi değil. Tek atışta bir hata
+bütün turu çöpe atar. Primitifleri erken sınama imkânı da veriyor: B kolu
+`replaceOnce`'ı üç senaryoyla test edip devam etti.
+
+Karar kuralı: iş bir turda bitecek kadar tanımlıysa tek atış. Belirsizse,
+pahalıysa ya da ara ürün gözden geçirilecekse parçala.
+
+Bu ölçümde üç farklı geçerli çözüm çıktı (elle `Pickle`, `createPackageWithOptions`,
+`createPackageFromStreams`). Kabul testi doğru yazıldığında çözümü dayatmaya
+gerek kalmıyor.
 
 ## Gözlenen hata kalıpları
 
@@ -111,6 +144,21 @@ RAPOR KURALI: Her test icin calistirdigin komutu ve GERCEK CIKTISINI yaz.
 - Yıkıcı yolları sına: silme/üzerine yazma davranışı olan her bayrak için
 - Idempotansı sına: aynı işlem iki kez çalıştığında ne oluyor
 - Temizlik iste: test artıkları silinsin
+
+## Çalışma alanı izolasyonu
+
+`agy` süreç cwd'sini **yok sayar**; kendi scratch dizininde başlar
+(`~/.gemini/antigravity-cli/scratch`). Wrapper'daki `--cwd` tek başına
+hiçbir şey izole etmiyordu; bir deneyde worker hedeflenen alanın dışına,
+gerçek depoya yazdı ve bitmiş kodu bulup üzerine "sıfırdan yaptım" raporu
+verdi. Deney tamamen geçersizdi.
+
+Wrapper artık `--cwd` değerini `agy`'ye `--add-dir` olarak geçiriyor.
+
+Ders: **worker'ın nerede çalıştığını varsayma, sor.** Yeni bir çalışma alanı
+kurduğunda ilk iş `pwd` ve `ls` çalıştırıp doğrula. Bir karşılaştırma
+deneyi yapıyorsan, referans çözümün worker'ın erişebileceği yerde
+durmadığından emin ol.
 
 ## Süre ve maliyet
 

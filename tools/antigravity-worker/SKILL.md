@@ -126,9 +126,14 @@ bağlamı keşfetmek** ve **kendi işini eleştirmek**. Brief bu ikisini
 kapatmalı — "ne yapılacağını" anlatmak yetmiyor, "neyin yanlış gidebileceğini"
 de yazmak gerekiyor.
 
-Ölçülmüş fark (aynı görev, aynı oturum): sadece istenen anlatıldığında 3 hata
-çıktı; hata kalıpları + numaralı kabul testi eklendiğinde üçü de giderildi ve
-rapor ham çıktıyla geldi.
+Ölçülmüş fark (aynı görev, sıfırdan, izole çalışma alanı): sadece istenen
+anlatıldığında 3 hata çıktı. Aşağıdaki beş madde eklenip görev **tek turda**
+tekrar verildiğinde bağımsız kabul testlerinin 7'sinden 7'sini geçti.
+
+Aynı görev dört parçaya bölündüğünde sonuç yine 7/7 oldu ama 1.8 kat süre ve
+1.5 kat token harcadı. **Parçalamak kaliteyi artırmıyor**; değeri
+kurtarılabilirlikte — bir adım patlarsa tüm görevi değil o adımı tekrar
+edersin. İş bir turda bitecek kadar tanımlıysa tek atış yeterli.
 
 ### Brief'e mutlaka koyulacak beş şey
 
