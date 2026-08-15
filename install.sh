@@ -43,9 +43,29 @@ install_launcher() {
         -o "$macos/$APP_NAME" "$REPO_DIR/src/launcher.c"
 }
 
+apply_patches() {
+  info "asar yamalaniyor"
+  command -v node >/dev/null || die "node yok. Node.js gerekli: https://nodejs.org"
+  if [ ! -d "$REPO_DIR/patch/node_modules" ]; then
+    info "patch bagimliliklari kuruluyor"
+    npm --prefix "$REPO_DIR/patch" install --no-audit --no-fund
+  fi
+  node "$REPO_DIR/patch/apply.mjs" \
+       --src "$SRC_APP/Contents/Resources/app.asar" \
+       --out "$DEST_APP/Contents/Resources/app.asar"
+}
+
+install_hub() {
+  info "hub kopyalaniyor"
+  local res="$DEST_APP/Contents/Resources"
+  rm -rf "$res/hub"
+  cp -R "$REPO_DIR/hub" "$res/hub"
+}
+
 edit_plist() {
   info "Info.plist duzenleniyor"
   local pl="$DEST_APP/Contents/Info.plist"
+  plutil -remove ElectronAsarIntegrity "$pl" 2>/dev/null || true
   plutil -replace CFBundleIdentifier -string "$BUNDLE_ID" "$pl"
   plutil -replace CFBundleName       -string "$APP_NAME"  "$pl"
   plutil -replace CFBundleExecutable -string "$APP_NAME"  "$pl"
@@ -124,6 +144,8 @@ case "${1:-install}" in
     require_source
     copy_bundle
     install_launcher
+    apply_patches
+    install_hub
     edit_plist
     write_entitlements
     sign_bundle
