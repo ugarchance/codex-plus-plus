@@ -113,7 +113,8 @@ function buildStreams(baseDir, unpackedFiles, unpackedDirs) {
   const streams = [];
 
   function walk(currentDir) {
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       const fullPath = path.join(currentDir, entry.name);
       const relPath = path.relative(baseDir, fullPath);

@@ -61,8 +61,11 @@ def cmd_send(args):
     cmd.extend(["--mode", args.mode])
     cmd.extend(["--print-timeout", args.print_timeout])
 
-    for directory in args.add_dir or []:
-        cmd.extend(["--add-dir", directory])
+    workspace_dirs = list(args.add_dir or [])
+    if args.cwd and args.cwd not in workspace_dirs:
+        workspace_dirs.insert(0, args.cwd)
+    for directory in workspace_dirs:
+        cmd.extend(["--add-dir", os.path.abspath(directory)])
 
     if args.model:
         cmd.extend(["--model", args.model])
@@ -198,7 +201,7 @@ def main():
     send_parser.add_argument("--name", "-n", default="worker-1", help="Name of the session (e.g. worker-1, researcher)")
     send_parser.add_argument("--prompt", "-p", required=True, help="Prompt/task text to send")
     send_parser.add_argument("--new", action="store_true", help="Force start a new conversation instead of resuming")
-    send_parser.add_argument("--cwd", help="Working directory for the task")
+    send_parser.add_argument("--cwd", help="Task workspace; passed to agy as --add-dir, not just the process cwd")
     send_parser.add_argument("--model", help="Specific model to use")
     send_parser.add_argument("--effort", choices=["low", "medium", "high"], help="Reasoning effort level")
     send_parser.add_argument("--mode", default="accept-edits", choices=["accept-edits", "plan"], help="Agent execution mode")
