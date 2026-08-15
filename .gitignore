@@ -1,0 +1,4 @@
+.build/
+schema/
+*.log
+.DS_Store
