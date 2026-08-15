@@ -1,11 +1,18 @@
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
-const { app } = require("electron");
 
-const EMPTY = { version: 1, accounts: [], assignments: {} };
+function userDataDir() {
+  if (process.env.USER_DATA_DIR) return process.env.USER_DATA_DIR;
+  try {
+    return require("electron").app.getPath("userData");
+  } catch {
+    return path.join(os.homedir(), "Library/Application Support/CodexPP");
+  }
+}
 
 function storePath() {
-  return path.join(app.getPath("userData"), "accounts.json");
+  return path.join(userDataDir(), "accounts.json");
 }
 
 function read() {
@@ -14,10 +21,11 @@ function read() {
     return {
       version: data.version ?? 1,
       accounts: Array.isArray(data.accounts) ? data.accounts : [],
-      assignments: data.assignments ?? {}
+      assignments: data.assignments ?? {},
+      defaultAccountId: data.defaultAccountId ?? null
     };
   } catch {
-    return { ...EMPTY, accounts: [], assignments: {} };
+    return { version: 1, accounts: [], assignments: {}, defaultAccountId: null };
   }
 }
 
@@ -38,9 +46,22 @@ function updateAccount(id, changes) {
   return data.accounts[index];
 }
 
+function upsertAccount(account) {
+  const data = read();
+  const index = data.accounts.findIndex(
+    (a) => a.id === account.id || (account.accountId && a.accountId === account.accountId)
+  );
+  const slot = index === -1 ? data.accounts.length : index;
+  data.accounts[slot] = index === -1 ? account : { ...data.accounts[index], ...account, id: data.accounts[index].id };
+  if (!data.defaultAccountId) data.defaultAccountId = data.accounts[slot].id;
+  write(data);
+  return data.accounts[slot];
+}
+
 function publicView() {
   const data = read();
   return {
+    defaultAccountId: data.defaultAccountId,
     accounts: data.accounts.map((a) => ({
       id: a.id,
       label: a.label ?? null,
@@ -52,4 +73,4 @@ function publicView() {
   };
 }
 
-module.exports = { storePath, read, write, updateAccount, publicView };
+module.exports = { storePath, userDataDir, read, write, updateAccount, upsertAccount, publicView };
