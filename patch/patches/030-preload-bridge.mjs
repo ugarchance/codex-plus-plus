@@ -4,7 +4,18 @@ export default {
   glob: ".vite/build/preload.js",
   marker: 'exposeInMainWorld("__codexpp"',
   apply(source) {
-    const injection = '\n;(() => { const { contextBridge, ipcRenderer } = require("electron"); contextBridge.exposeInMainWorld("__codexpp", { authRefresh: async (hostId, params) => ipcRenderer.invoke("codexpp:auth-refresh", hostId, params) }); })();\n';
+    const injection = [
+      "",
+      ";(() => {",
+      '  const { contextBridge, ipcRenderer } = require("electron");',
+      '  contextBridge.exposeInMainWorld("__codexpp", {',
+      '    authRefresh: (hostId, params) => ipcRenderer.invoke("codexpp:auth-refresh", hostId, params),',
+      '    accounts: () => ipcRenderer.invoke("codexpp:accounts"),',
+      '    assign: (hostId, accountId) => ipcRenderer.invoke("codexpp:assign", hostId, accountId)',
+      "  });",
+      "})();",
+      ""
+    ].join("\n");
     return source + injection;
   }
 };
