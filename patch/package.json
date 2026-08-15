@@ -1,0 +1,8 @@
+{
+  "name": "gpt-binary-patch",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@electron/asar": "^4.2.1"
+  }
+}
