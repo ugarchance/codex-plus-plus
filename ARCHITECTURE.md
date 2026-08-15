@@ -70,13 +70,37 @@ sürece `attestation/generate` gelmez.
 ## Yama yüzeyi
 
 Ağırlık asar'ın dışında durur. Her Codex güncellemesinde yama yeniden
-uygulanacağı için asar'a dokunan kısım küçük tutulur:
+uygulanacağı için asar'a dokunan kısım küçük tutulur. Geri kalan her şey
+`hub/` altında normal kod.
 
-1. main process → hub'ı başlat, IPC köprüsü
-2. renderer → `account/chatgptAuthTokens/refresh` cevabı
-3. renderer → hesap menüsü paneli
+| # | Dosya | Yöntem | İş |
+|---|---|---|---|
+| 1 | `.vite/build/early-bootstrap.js` | başa ekle | hub'ı main process'te başlat |
+| 2 | `.vite/build/preload.js` | sona ekle | renderer'a `__codexpp` köprüsü |
+| 3 | `webview/assets/app-initial-*.js` | çapa | refresh isteğine cevap |
+| 4 | `webview/assets/usage-settings-*.js` | çapa | hesap listesi paneli |
 
-Geri kalan her şey `hub/` altında normal kod.
+1 ve 2 numaralı dosyaların adları **hash'siz** — `package.json` içindeki
+`main` alanı `early-bootstrap.js`'i doğrudan adıyla çağırıyor. Çapa aramaya
+gerek yok, dosya sınırına ekleme yeterli; tekrar uygulamayı marker engelliyor.
+`early-bootstrap.js` 216 bayt ve tek satır: uygulamanın ilk çalışan kodu.
+
+3 ve 4 hash'li, glob ile bulunup çapayla yamalanır.
+
+`preload.js` `contextIsolation` açık çalışıyor: renderer'a erişim
+`contextBridge.exposeInMainWorld` üzerinden. Mevcut köprü `electronBridge`,
+IPC kanalları `codex_desktop:message-from-view` / `...-for-view`.
+
+## Hub'ın yeri
+
+Hub, yamalı uygulamanın **içinde** durur: `Codex++.app/Contents/Resources/hub/`.
+`early-bootstrap.js` onu `process.resourcesPath` üzerinden çağırır, yol
+kullanıcıdan bağımsız olur ve uygulama tek başına taşınabilir kalır — başka
+makineye kopyalamak yeter.
+
+Kimlikler ve hesap kaydı uygulamanın içinde değil, `USER_DATA_DIR` altında
+durur (`~/Library/Application Support/CodexPP`). Uygulama silinip yeniden
+yamalandığında hesaplar kaybolmaz.
 
 ## Sağlayıcı katmanı
 

@@ -222,16 +222,30 @@ async function main() {
     const streams = buildStreams(workDir, unpackedFiles, unpackedDirs);
     await createPackageFromStreams(tempOut, streams);
 
-    fs.renameSync(tempOut, outPath);
-
+    const srcUnpacked = `${srcPath}.unpacked`;
     const tempOutUnpacked = `${tempOut}.unpacked`;
     const outUnpacked = `${outPath}.unpacked`;
-    if (fs.existsSync(tempOutUnpacked)) {
-      if (fs.existsSync(outUnpacked)) {
-        fs.rmSync(outUnpacked, { recursive: true, force: true });
+
+    if (fs.existsSync(srcUnpacked)) {
+      if (!fs.existsSync(tempOutUnpacked)) {
+        fs.mkdirSync(tempOutUnpacked, { recursive: true });
       }
+      fs.cpSync(srcUnpacked, tempOutUnpacked, {
+        recursive: true,
+        force: false,
+        errorOnExist: false,
+        verbatimSymlinks: true,
+      });
+    }
+
+    if (fs.existsSync(outUnpacked)) {
+      fs.rmSync(outUnpacked, { recursive: true, force: true });
+    }
+    if (fs.existsSync(tempOutUnpacked)) {
       fs.renameSync(tempOutUnpacked, outUnpacked);
     }
+
+    fs.renameSync(tempOut, outPath);
 
     tempOut = null;
   } catch (err) {

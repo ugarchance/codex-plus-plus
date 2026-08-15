@@ -127,15 +127,21 @@ kapatmalı — "ne yapılacağını" anlatmak yetmiyor, "neyin yanlış gidebile
 de yazmak gerekiyor.
 
 Ölçülmüş fark (aynı görev, sıfırdan, izole çalışma alanı): sadece istenen
-anlatıldığında 3 hata çıktı. Aşağıdaki beş madde eklenip görev **tek turda**
-tekrar verildiğinde bağımsız kabul testlerinin 7'sinden 7'sini geçti.
+anlatıldığında 3 hata çıktı. Aşağıdaki maddeler eklenip görev **tek turda**
+tekrar verildiğinde bağımsız kabul testlerinin tamamını geçti.
 
-Aynı görev dört parçaya bölündüğünde sonuç yine 7/7 oldu ama 1.8 kat süre ve
-1.5 kat token harcadı. **Parçalamak kaliteyi artırmıyor**; değeri
-kurtarılabilirlikte — bir adım patlarsa tüm görevi değil o adımı tekrar
-edersin. İş bir turda bitecek kadar tanımlıysa tek atış yeterli.
+Aynı görev dört parçaya bölündüğünde kalite değişmedi (ağırlıklı karnede
+94'e 95, ölçüm hatası sınırında). İki gerçek fark var: parçalı kol yaklaşık
+**2 kat yavaş** ama **%25–30 daha ucuz** — her adımın bağlamı dar olduğu için.
+**Parçalamak kaliteyi artırmıyor**; değeri kurtarılabilirlikte — bir adım
+patlarsa tüm görevi değil o adımı tekrar edersin. İş bir turda bitecek kadar
+tanımlıysa tek atış yeterli; belirsizse ya da ara ürün gözden geçirilecekse
+parçala.
 
-### Brief'e mutlaka koyulacak beş şey
+> `--json` çıktısındaki `total_tokens` konuşma boyunca **kümülatiftir**.
+> Adımları toplarsan maliyeti kat kat şişirirsin. Son adımın değerini al.
+
+### Brief'e mutlaka koyulacak altı şey
 
 1. **Çevre bağlamı.** Hedef dosyanın yanındaki artefaktları isimle say. Worker
    kendiliğinden dışarı bakmıyor; yanı başında duran bir klasörü kaçırıyor.
@@ -146,6 +152,11 @@ edersin. İş bir turda bitecek kadar tanımlıysa tek atış yeterli.
    sık görülen hata: değişkeni hesaplayıp kullanmayı unutuyor.
 5. **Numaralı kabul testi + ham çıktı zorunluluğu.** "Doğrulandı" demeyi
    açıkça yasakla, komut ve gerçek çıktı iste.
+6. **Sürdürülebilirlik ölçütü.** Kabul testi sadece sonucu ölçüyorsa worker en
+   kısa yolu seçer: belgelenmemiş iç modüllere bağlanır, ikili biçimi elle
+   kurar. Kütüphanenin genel API'sinde kalması gerekiyorsa bunu ölçüt olarak
+   yaz — üç ayrı koşuda üç farklı çözüm çıktı, hepsi testleri geçti, biri
+   bir sonraki sürüm yükseltmesinde sessizce kırılacaktı.
 
 ### Ölçüt yazarken
 

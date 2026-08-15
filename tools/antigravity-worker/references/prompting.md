@@ -59,12 +59,36 @@ senaryoyla test edip devam etti.
 Karar kuralı: iş bir turda bitecek kadar tanımlıysa ve hız önemliyse tek atış.
 Belirsizse, token bütçesi darsa ya da ara ürün gözden geçirilecekse parçala.
 
-Her tekrarda farklı ama geçerli çözümler çıktı: elle `Pickle` ile başlık
-kurma, asar iç modüllerini (`lib/disk`, `lib/filesystem`) kullanma,
-`createPackageFromStreams`. Kabul testi doğru yazıldığında çözümü dayatmaya
-gerek kalmıyor — ama **sürdürülebilirliği ölçmek istiyorsan onu da kabul
-testine koy**, yoksa worker en kısa yolu seçer ve belgelenmemiş iç modüllere
-bağlanır.
+### Ölçüm 3 — ağırlıklı karne
+
+İkinci tekrar, boyutlar önceliklendirilerek puanlandı. Referans, aynı görevin
+elle yazılmış ve bağımsız doğrulanmış çözümü.
+
+| Boyut | Ağırlık | A: tek atış | B: parçalı | Referans |
+|---|---|---|---|---|
+| Doğruluk / bütünlük | 30 | 30 | 30 | 27 |
+| Güvenlik / yıkıcılık | 20 | 20 | 20 | 20 |
+| Dayanıklılık | 15 | 15 | 15 | 15 |
+| Çözüm yolu / sürdürülebilirlik | 15 | 9 | 10 | 15 |
+| Kod kalitesi | 10 | 10 | 10 | 10 |
+| Doğrulama dürüstlüğü | 10 | 10 | 10 | 10 |
+| **Toplam** | 100 | **94** | **95** | **97** |
+
+İki kol da güvenlik, dayanıklılık, kod kalitesi ve dürüstlükte tam puan aldı.
+Ölü değişken yok, yıkıcı bayraklar güvenli, bozuk çapada duruyor, çıktı
+belirli. **Ölçülen boyutta worker referansı yakalıyor.**
+
+Kaybettiği tek yer ölçülmeyen boyut: her tekrarda farklı ama geçerli çözümler
+çıktı — elle `Pickle` ile başlık kurma, asar iç modüllerini (`lib/disk`,
+`lib/filesystem`) kullanma, `createPackageFromStreams`. Üçü de testleri geçti;
+ilk ikisi kütüphane sürümü değiştiğinde sessizce kırılacaktı. Kabul testi doğru
+yazıldığında çözümü dayatmaya gerek kalmıyor — ama **sürdürülebilirliği ölçmek
+istiyorsan onu da kabul testine koy**, yoksa worker en kısa yolu seçer.
+
+Not: worker iki kolda da referansın kaçırdığı bir şeyi yakaladı — başlıkta
+kaydı olmayıp yan dizinde duran 3 dosyayı. Referans başlıktan yeniden kuruyordu,
+worker kaynağı olduğu gibi kopyaladı. **"Kaynakta ne varsa o" mantığı
+"kayıtta ne yazıyorsa o" mantığından daha sağlam.**
 
 ## Gözlenen hata kalıpları
 
