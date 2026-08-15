@@ -57,18 +57,24 @@ function asResponse(account) {
   };
 }
 
-async function tokenForHost(hostId, params) {
-  const account = selectAccount(store.read(), hostId, params);
-  if (!account) return null;
-
-  if (account.accessToken && account.expiresAt - CLOCK_SKEW_MS > Date.now()) {
-    return asResponse(account);
-  }
+async function fresh(account) {
+  if (account.accessToken && account.expiresAt - CLOCK_SKEW_MS > Date.now()) return account;
 
   if (!inFlight.has(account.id)) {
     inFlight.set(account.id, refreshAccount(account).finally(() => inFlight.delete(account.id)));
   }
-  return asResponse(await inFlight.get(account.id));
+  return inFlight.get(account.id);
 }
 
-module.exports = { tokenForHost, refreshAccount };
+async function accessTokenFor(account) {
+  if (!account?.refreshToken && !account?.accessToken) return null;
+  return (await fresh(account))?.accessToken ?? null;
+}
+
+async function tokenForHost(hostId, params) {
+  const account = selectAccount(store.read(), hostId, params);
+  if (!account) return null;
+  return asResponse(await fresh(account));
+}
+
+module.exports = { tokenForHost, refreshAccount, accessTokenFor };

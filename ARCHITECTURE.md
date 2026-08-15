@@ -78,7 +78,7 @@ uygulanacağı için asar'a dokunan kısım küçük tutulur. Geri kalan her şe
 | 1 | `.vite/build/early-bootstrap.js` | başa ekle | hub'ı main process'te başlat |
 | 2 | `.vite/build/preload.js` | sona ekle | renderer'a `__codexpp` köprüsü |
 | 3 | `webview/assets/app-initial-*.js` | çapa | refresh isteğine cevap |
-| 4 | `webview/assets/usage-settings-*.js` | çapa | hesap listesi paneli |
+| 4 | `webview/assets/app-initial-*.js` | çapa | profil menüsüne hesap bloğu |
 
 1 ve 2 numaralı dosyaların adları **hash'siz** — `package.json` içindeki
 `main` alanı `early-bootstrap.js`'i doğrudan adıyla çağırıyor. Çapa aramaya
@@ -101,6 +101,19 @@ makineye kopyalamak yeter.
 Kimlikler ve hesap kaydı uygulamanın içinde değil, `USER_DATA_DIR` altında
 durur (`~/Library/Application Support/CodexPP`). Uygulama silinip yeniden
 yamalandığında hesaplar kaybolmaz.
+
+## Hesap başına kullanım
+
+`https://chatgpt.com/backend-api/codex/usage`, hesabın erişim tokeniyle
+`rate_limit.primary_window.used_percent` döndürür. İki başlık zorunlu:
+`ChatGPT-Account-Id` ve `User-Agent: codex_cli_rs` — tarayıcı UA'sı ile
+403 geliyor.
+
+İstek `node:https` ile atılır, Electron'un `fetch`'i özel `User-Agent`
+başlığını geçirmiyor.
+
+Sonuç hesap kaydına yazılır (`usedPercent`, `resetAt`, `usageAt`), menü
+`accountsSync()` ile anında okur, `refreshUsage()` ile arkadan tazeler.
 
 ## Sağlayıcı katmanı
 

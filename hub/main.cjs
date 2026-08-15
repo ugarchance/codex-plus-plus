@@ -2,6 +2,7 @@ const { ipcMain } = require("electron");
 const store = require("./store.cjs");
 const tokens = require("./tokens.cjs");
 const login = require("./login.cjs");
+const usage = require("./usage.cjs");
 
 ipcMain.handle("codexpp:auth-refresh", async (_event, hostId, params) => {
   try {
@@ -16,7 +17,14 @@ ipcMain.on("codexpp:accounts-sync", (event) => {
   event.returnValue = store.publicView();
 });
 
-ipcMain.handle("codexpp:accounts", () => store.publicView());
+ipcMain.handle("codexpp:refresh-usage", async (_event, force) => {
+  try {
+    return await usage.refreshAll({ force: force === true });
+  } catch (err) {
+    console.error("==> codexpp kullanim yenilenemedi:", err.message);
+    return store.publicView();
+  }
+});
 
 ipcMain.handle("codexpp:set-default", (_event, accountId) => {
   const data = store.read();
@@ -38,11 +46,14 @@ ipcMain.handle("codexpp:assign", (_event, hostId, accountId) => {
 ipcMain.handle("codexpp:add-account", async (_event, label) => {
   try {
     await login.addAccount(label);
+    await usage.refreshAll({ force: true });
     return { ok: true, view: store.publicView() };
   } catch (err) {
     console.error("==> codexpp hesap eklenemedi:", err.message);
     return { ok: false, error: err.message };
   }
 });
+
+usage.refreshAll({ force: true }).catch(() => {});
 
 console.log("==> codexpp hub başlatıldı");

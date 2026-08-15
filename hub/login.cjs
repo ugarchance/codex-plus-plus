@@ -45,13 +45,15 @@ async function addAccount(label) {
     if (!refreshToken) throw new Error("auth.json içinde refresh token yok");
 
     const claims = authClaims(accessToken);
-    const email = decodeClaims(auth?.tokens?.id_token).email ?? null;
+    const identity = decodeClaims(auth?.tokens?.id_token);
+    const email = identity.email ?? null;
     const existingCount = store.read().accounts.length;
 
     return store.upsertAccount({
       id: randomUUID(),
-      label: label ?? email ?? `Abonelik ${existingCount + 1}`,
+      label: label ?? identity.name ?? email ?? `Abonelik ${existingCount + 1}`,
       email,
+      avatarUrl: identity.picture ?? null,
       accountId: claims.chatgpt_account_id ?? auth?.tokens?.account_id ?? null,
       planType: claims.chatgpt_plan_type ?? null,
       refreshToken,

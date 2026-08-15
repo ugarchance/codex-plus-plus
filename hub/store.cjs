@@ -67,7 +67,10 @@ function publicView() {
       label: a.label ?? null,
       email: a.email ?? null,
       planType: a.planType ?? null,
-      accountId: a.accountId ?? null
+      accountId: a.accountId ?? null,
+      avatarUrl: a.avatarUrl ?? null,
+      usedPercent: a.usedPercent ?? null,
+      resetAt: a.resetAt ?? null
     })),
     assignments: data.assignments
   };
