@@ -29,30 +29,42 @@ Tek fark bilginin teslim biçimi. Sonuçlar bağımsız bir doğrulayıcıyla s�
 (başlık kümesi eşitliği, yan artefakt bayt karşılaştırması, yıkıcı bayrak,
 bozuk çapa, belirlilik, yorum yasağı).
 
+İki tekrar yapıldı. İkincisinde kabul testine integrity ve yan artefakt
+sadakati eklendi, ayrıca `--help` ve bilinmeyen argüman reddi brief'e kural
+olarak kondu.
+
 | | A: tek atış | B: dört parça |
 |---|---|---|
-| Süre | 6 dk 23 sn | 11 dk 37 sn |
+| Süre (1. / 2. tekrar) | 6 dk 23 sn / 5 dk 25 sn | 11 dk 37 sn / 10 dk 51 sn |
 | Tur | 1 | 4 |
-| Token | 608k | 899k |
-| Bağımsız test | 7/7 | 7/7 |
-| Satır | 293 | 184 |
-| Paketleme çözümü | elle Pickle | `createPackageWithOptions` |
+| Token (2. tekrar) | 559k | 424k |
+| Ağırlıklı puan (2. tekrar) | 94/100 | 95/100 |
+| Satır | 379 | 282 |
 
-**Sonuç: parçalamak kaliteyi artırmadı.** İkisi de tüm testlerden geçti.
-Parçalı kol 1.8 kat süre ve 1.5 kat token harcadı, karşılığında daha derli
-toplu kod üretti (184 satır).
+**Parçalamak kaliteyi artırmadı** — iki tekrarda da fark ölçüm hatası
+sınırında kaldı. Ama iki gerçek fark var:
 
-Parçalamanın gerçek faydası kalite değil, **kurtarılabilirlik**. Bir adım
-patlarsa o adımı tekrar edersin, tüm görevi değil. Tek atışta bir hata
-bütün turu çöpe atar. Primitifleri erken sınama imkânı da veriyor: B kolu
-`replaceOnce`'ı üç senaryoyla test edip devam etti.
+- **Süre:** parçalı kol yaklaşık 2 kat yavaş.
+- **Token:** parçalı kol %25–30 daha **ucuz**. Her adımın bağlamı dar
+  olduğu için tek dev turdan az token yakıyor.
 
-Karar kuralı: iş bir turda bitecek kadar tanımlıysa tek atış. Belirsizse,
-pahalıysa ya da ara ürün gözden geçirilecekse parçala.
+> Uyarı: `total_tokens` konuşma boyunca **kümülatiftir**. Adımları toplarsan
+> maliyeti kat kat şişirirsin. Son adımın değerini al.
 
-Bu ölçümde üç farklı geçerli çözüm çıktı (elle `Pickle`, `createPackageWithOptions`,
-`createPackageFromStreams`). Kabul testi doğru yazıldığında çözümü dayatmaya
-gerek kalmıyor.
+Parçalamanın asıl faydası **kurtarılabilirlik**: bir adım patlarsa o adımı
+tekrar edersin, tüm görevi değil. Tek atışta bir hata bütün turu çöpe atar.
+Primitifleri erken sınama imkânı da veriyor — B kolu `replaceOnce`'ı üç
+senaryoyla test edip devam etti.
+
+Karar kuralı: iş bir turda bitecek kadar tanımlıysa ve hız önemliyse tek atış.
+Belirsizse, token bütçesi darsa ya da ara ürün gözden geçirilecekse parçala.
+
+Her tekrarda farklı ama geçerli çözümler çıktı: elle `Pickle` ile başlık
+kurma, asar iç modüllerini (`lib/disk`, `lib/filesystem`) kullanma,
+`createPackageFromStreams`. Kabul testi doğru yazıldığında çözümü dayatmaya
+gerek kalmıyor — ama **sürdürülebilirliği ölçmek istiyorsan onu da kabul
+testine koy**, yoksa worker en kısa yolu seçer ve belgelenmemiş iç modüllere
+bağlanır.
 
 ## Gözlenen hata kalıpları
 
