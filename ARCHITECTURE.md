@@ -79,13 +79,20 @@ uygulanacağı için asar'a dokunan kısım küçük tutulur. Geri kalan her şe
 | 2 | `.vite/build/preload.js` | sona ekle | renderer'a `__codexpp` köprüsü |
 | 3 | `webview/assets/app-initial-*.js` | çapa | refresh isteğine cevap |
 | 4 | `webview/assets/app-initial-*.js` | çapa | profil menüsüne hesap bloğu |
+| 5 | `.vite/build/bootstrap-*.js` | çapa | `setPath('userData')` çağrısını atla |
 
 1 ve 2 numaralı dosyaların adları **hash'siz** — `package.json` içindeki
 `main` alanı `early-bootstrap.js`'i doğrudan adıyla çağırıyor. Çapa aramaya
 gerek yok, dosya sınırına ekleme yeterli; tekrar uygulamayı marker engelliyor.
 `early-bootstrap.js` 216 bayt ve tek satır: uygulamanın ilk çalışan kodu.
 
-3 ve 4 hash'li, glob ile bulunup çapayla yamalanır.
+3, 4 ve 5 hash'li, glob ile bulunup çapayla yamalanır.
+
+5 numara macOS içindir: uygulama açılışta `app.setPath('userData', …/Codex)`
+çağırıyor. Launcher zaten `--user-data-dir` verdiği için Electron bunu
+yok sayıyor, ama çağrının kendisi başka bir uygulamanın veri dizinine
+erişim sayılıp TCC izin penceresi çıkarıyor. Yama, `--user-data-dir`
+verilmişse çağrıyı atlar.
 
 `preload.js` `contextIsolation` açık çalışıyor: renderer'a erişim
 `contextBridge.exposeInMainWorld` üzerinden. Mevcut köprü `electronBridge`,
