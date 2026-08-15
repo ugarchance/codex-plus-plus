@@ -110,7 +110,7 @@ sign_bundle() {
     | awk '{print gsub(/\//,"/") "\t" $0}' | sort -rn | cut -f2- \
     | while IFS= read -r p; do
         [ -e "$p" ] || continue
-        codesign --force --sign - --timestamp=none --options runtime "$p" 2>/dev/null \
+        codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$p" 2>/dev/null \
           || codesign --force --sign - --timestamp=none "$p" 2>/dev/null \
           || echo "    ! imzalanamadi: ${p#"$DEST_APP"/}"
       done
