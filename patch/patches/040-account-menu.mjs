@@ -146,7 +146,7 @@ function block({ jsx, menu, item, react }) {
     "children:`Usage remaining`},`cxp-summary`)",
     ":_props.usage??null;",
 
-    "const _autoRow=(0,${jsx}.jsx)(${item},{LeftIcon:${ROUTE},onClick:_toggleAutoRoute,",
+    `const _autoRow=(0,${jsx}.jsx)(${item},{LeftIcon:${ROUTE},onClick:_toggleAutoRoute,`,
     `rightIcon:(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:_autoRoute?\`Açık\`:\`Kapalı\`}),`,
     "children:`Otomatik yönlendirme`},`cxp-auto-route`);",
 

@@ -117,7 +117,14 @@ const helpers = [
 ].join("\n");
 
 const DPR_ANCHOR = "t.params.error.codexErrorInfo===`usageLimitExceeded`&&";
-const DPR_REPLACEMENT = "t.params.error.codexErrorInfo===`usageLimitExceeded`&&(globalThis.__cxpMarkActiveIneligible?.(`usageLimitExceeded`),";
+// Self-balanced replacement: (side-effect, original-condition) && ...
+// The comma expression evaluates the marker call, then yields the original
+// condition unchanged, so downstream semantics are identical and no
+// downstream closing paren is required.
+const DPR_REPLACEMENT =
+  "t.params.error.codexErrorInfo===`usageLimitExceeded`&&" +
+  "(globalThis.__cxpMarkActiveIneligible?.(`usageLimitExceeded`)," +
+  "t.params.error.codexErrorInfo===`usageLimitExceeded`)&&";
 
 const Z0S_RETURN_PATTERN = `t\\[137\\]=(${NAME})\\):\\1=t\\[137\\],\\1\\}function (${NAME})\\((${NAME})\\)\\{let ${NAME}=\\(0,${NAME}\\.c\\)\\(18\\),`;
 
@@ -142,16 +149,33 @@ export default {
 
     const failoverCode = failoverBlock({ jsx, react });
 
-    const z0sReturnReplaced = z0sMatch[0].replace(
-      `:${returnVar}=t[137],${returnVar}}`,
-      `:${returnVar}=t[137],(0,${jsx}.jsx)(${FAILOVER_CARD},{original:${returnVar}})}`
-    );
+    // The matched region spans the memoized return expression of the
+    // banner component and the head of the next function definition:
+    //   t[137]=<v>):<v>=t[137],<v>}function Next(e){...
+    // The memo slot caches the raw element in both branches; the comma tail
+    // yields the rendered value. Wrap that final value so both branches are
+    // covered, and splice the helper function in at the statement boundary
+    // between the two function definitions (never inside an expression).
+    const full = z0sMatch[0];
+    const nextFnOffset = full.lastIndexOf("function ");
+    if (nextFnOffset === -1) throw new Error("next function boundary not found");
+    const headPart = full.slice(0, nextFnOffset);
+    const nextFnPart = full.slice(nextFnOffset);
+
+    const tailToken = `,${returnVar}}`;
+    const tailIndex = headPart.lastIndexOf(tailToken);
+    if (tailIndex === -1) throw new Error("memo tail not found");
+    const headWrapped =
+      headPart.slice(0, tailIndex) +
+      `,(0,${jsx}.jsx)(${FAILOVER_CARD},{original:${returnVar}})}`;
 
     let patched =
       source.slice(0, z0sIndex) +
+      headWrapped +
+      "\n" +
       failoverCode +
       "\n" +
-      z0sReturnReplaced +
+      nextFnPart +
       source.slice(z0sIndex + z0sMatch[0].length);
 
     patched = replaceOnce(patched, DPR_ANCHOR, DPR_REPLACEMENT);
