@@ -83,7 +83,7 @@ ordinary code under `hub/`.
 | # | File | Method | Job |
 |---|---|---|---|
 | 010 | `webview/assets/app-initial-*.js` | anchor | answer the refresh request |
-| 020 | `.vite/build/early-bootstrap.js` | append | start the hub in the main process |
+| 020 | `.vite/build/early-bootstrap.js` | append | start the hub and disable the in-app updater (`CODEX_SPARKLE_ENABLED=false`) |
 | 030 | `.vite/build/preload.js` | append | expose `__codexpp` to the renderer |
 | 040 | `webview/assets/app-initial-*.js` | anchor | account block in the profile menu |
 | 050 | `.vite/build/bootstrap-*.js` | anchor | skip the `setPath('userData')` call |

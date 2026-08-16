@@ -176,10 +176,13 @@ authenticode signatures and need no entitlements.
 
 ### Auto-update
 
-On macOS it is turned off with `CODEX_SPARKLE_ENABLED=false`, otherwise the
-fork updates itself and the patches are gone. On Windows the store updates
-only the installed package — the patched copy stays as it is. On both
-platforms: re-run the installer after the original app updates.
+Patch 020 sets `CODEX_SPARKLE_ENABLED=false` in the main process on every
+platform. That one flag gates all three updaters — Sparkle on macOS, the
+Microsoft Store updater and the MSIX fallback on Windows. On Windows the flag
+matters even more than on macOS: the copy runs without MSIX package identity,
+so the store updater would throw `İşlemde paket kimliği yok` on every launch
+and the copy could never update itself anyway. On both platforms: re-run the
+installer after the original app updates.
 
 ## Patches
 
@@ -189,7 +192,7 @@ code.
 | # | File | Job |
 |---|---|---|
 | 010 | `webview/assets/app-initial-*.js` | answer the engine's token refresh request |
-| 020 | `.vite/build/early-bootstrap.js` | start the hub in the main process |
+| 020 | `.vite/build/early-bootstrap.js` | start the hub in the main process and set `CODEX_SPARKLE_ENABLED=false` |
 | 030 | `.vite/build/preload.js` | expose the `__codexpp` bridge to the renderer |
 | 040 | `webview/assets/app-initial-*.js` | account list, usage, switching and logout in the profile menu |
 | 050 | `.vite/build/bootstrap-*.js` | skip the `setPath('userData')` call that triggers a macOS permission prompt |
