@@ -4,6 +4,7 @@ const tokens = require("./tokens.cjs");
 const login = require("./login.cjs");
 const usage = require("./usage.cjs");
 const accounts = require("./accounts.cjs");
+const profile = require("./profile.cjs");
 
 function guard(label, handler) {
   return async (...args) => {
@@ -71,7 +72,78 @@ ipcMain.handle("codexpp:add-account", async (_event, label) => {
   }
 });
 
+const PROFILE_ENDPOINT = "https://chatgpt.com/backend-api/wham/profiles/me";
+const PROFILE_STALE_MS = 60_000;
+let cachedProfile = null;
+let profileCacheAt = 0;
+
+async function fetchCombinedProfile(force = false) {
+  if (!force && cachedProfile && Date.now() - profileCacheAt < PROFILE_STALE_MS) {
+    return cachedProfile;
+  }
+
+  const accountList = store.accounts();
+  if (accountList.length === 0) {
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+
+  const collected = [];
+  let hasFailed = false;
+
+  for (const acc of accountList) {
+    try {
+      const accessToken = await tokens.accessTokenFor(acc);
+      if (!accessToken || !acc.accountId) {
+        hasFailed = true;
+        continue;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+        "ChatGPT-Account-ID": acc.accountId,
+        "User-Agent": "Codex Subscription Router",
+        Accept: "application/json"
+      };
+
+      const res = await fetch(PROFILE_ENDPOINT, { method: "GET", headers });
+      if (!res.ok) {
+        hasFailed = true;
+        continue;
+      }
+
+      const data = await res.json();
+      if (data && data.profile && data.stats) {
+        collected.push(data);
+      } else {
+        hasFailed = true;
+      }
+    } catch (err) {
+      console.error(`==> codexpp profile fetch failed for ${acc.id}:`, err.message);
+      hasFailed = true;
+    }
+  }
+
+  if (collected.length === 0) {
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+
+  const merged = profile.mergeProfiles(collected, { partial: hasFailed });
+  cachedProfile = merged;
+  profileCacheAt = Date.now();
+  return merged;
+}
+
+ipcMain.handle("codexpp:combined-profile", async (_event, force) => {
+  try {
+    return await fetchCombinedProfile(force === true);
+  } catch (err) {
+    console.error("==> codexpp combined profile failed:", err.message);
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+});
+
 store.setActive(null);
 usage.refreshAll({ force: true }).catch(() => {});
 
 console.log("==> codexpp hub started");
+
