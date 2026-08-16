@@ -56,12 +56,12 @@ function reactNamespace(source) {
 
 function helpers({ jsx, react }) {
   return [
-    "const _cxpTones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];",
+    "const _cxpModalTones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];",
     "function _cxpModalTitle(_a){const _l=_a.label??_a.email??_a.id;return _a.email&&_l===_a.email?_l.split(`@`)[0]:_l}",
     `function ${MODAL_AVATAR}(_p){`,
     "const _a=_p.account,_i=_p.index;",
     `if(_a.avatarUrl)return(0,${jsx}.jsx)(\`img\`,{src:_a.avatarUrl,alt:\`\`,className:\`icon-xs rounded-full object-cover\`});`,
-    "const _tone=_cxpTones[_i%_cxpTones.length];",
+    "const _tone=_cxpModalTones[_i%_cxpModalTones.length];",
     "const _text=_cxpModalTitle(_a).trim().slice(0,1).toUpperCase();",
     `return(0,${jsx}.jsx)(\`span\`,{`,
     "className:`icon-xs flex items-center justify-center rounded-full text-[9px] leading-none font-semibold`,",
