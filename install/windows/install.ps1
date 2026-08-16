@@ -50,9 +50,22 @@ function Resolve-SourceApp {
   return $app
 }
 
+function Backup-ExistingApp {
+  if (Test-Path $DestDir) {
+    $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmssZ")
+    $backupDir = Join-Path $DataDir "backups"
+    $backupTarget = Join-Path $backupDir "CodexPP-$ts"
+    Info "backing up existing app -> $backupTarget"
+    if (-not (Test-Path $backupDir)) {
+      New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    }
+    Move-Item -Path $DestDir -Destination $backupTarget
+  }
+}
+
 function Copy-App {
+  Backup-ExistingApp
   Info "copying -> $DestDir"
-  if (Test-Path $DestDir) { Remove-Item $DestDir -Recurse -Force }
   # robocopy: 0-7 are success, anything else is a real failure
   robocopy $SrcApp $DestDir /E /NFL /NDL /NJH /NJS /NP | Out-Null
   if ($LASTEXITCODE -ge 8) { Die "robocopy failed with exit code $LASTEXITCODE" }

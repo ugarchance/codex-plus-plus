@@ -16,6 +16,12 @@ want.
 
 ## Install
 
+### Install via prompt
+
+To install Codex++ using an AI coding agent, paste this prompt into the assistant:
+
+> Clone the repository (or work from this local checkout) and run the installer for this operating system (`./install/mac/install.sh install` on macOS or `powershell -ExecutionPolicy Bypass -File install\windows\install.ps1` on Windows) without modifying the original `/Applications/ChatGPT.app` or store package. Verify that the installation succeeded by checking the newly created application bundle or shortcut, and ask for clarification if any prerequisites (such as Xcode Command Line Tools, Node.js, or the base ChatGPT application) are missing.
+
 macOS:
 
 ```bash
