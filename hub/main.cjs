@@ -75,3 +75,15 @@ store.setActive(null);
 usage.refreshAll({ force: true }).catch(() => {});
 
 console.log("==> codexpp hub started");
+
+ipcMain.handle("codexpp:add-account-device-code", async (_event, label, timeoutMs) => {
+  try {
+    await login.addAccountDeviceCode(label, timeoutMs);
+    await usage.refreshAll({ force: true });
+    return { ok: true, view: store.publicView() };
+  } catch (err) {
+    console.error("==> codexpp could not add account (device code):", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+
