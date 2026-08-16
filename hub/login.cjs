@@ -11,7 +11,12 @@ function codexBinary() {
   if (process.env.CODEX_BIN) return process.env.CODEX_BIN;
   const name = process.platform === "win32" ? "codex.exe" : "codex";
   if (process.resourcesPath) return path.join(process.resourcesPath, name);
-  if (process.platform === "win32") return name; // resolved from PATH
+  if (process.platform === "win32") {
+    // outside the app (tools/add-account.mjs): prefer the installed Codex++ copy
+    const installed = path.join(process.env.LOCALAPPDATA ?? "", "Programs", "CodexPP", "resources", name);
+    if (fs.existsSync(installed)) return installed;
+    return name; // resolved from PATH
+  }
   return "/Applications/ChatGPT.app/Contents/Resources/codex";
 }
 
