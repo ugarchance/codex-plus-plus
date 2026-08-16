@@ -4,6 +4,7 @@ const tokens = require("./tokens.cjs");
 const login = require("./login.cjs");
 const usage = require("./usage.cjs");
 const accounts = require("./accounts.cjs");
+const routing = require("./routing.cjs");
 
 function guard(label, handler) {
   return async (...args) => {
@@ -71,7 +72,51 @@ ipcMain.handle("codexpp:add-account", async (_event, label) => {
   }
 });
 
+ipcMain.on("codexpp:routing-view", (event) => {
+  try {
+    const data = routing.read();
+    event.returnValue = {
+      version: data.version ?? 1,
+      threadOwner: data.threadOwner ?? {},
+      learnedIneligible: data.learnedIneligible ?? {},
+      autoRoute: data.autoRoute !== false,
+      activeAccountId: store.activeAccountId()
+    };
+  } catch (err) {
+    console.error("==> codexpp routing-view error:", err.message);
+    event.returnValue = { version: 1, threadOwner: {}, learnedIneligible: {}, autoRoute: true, activeAccountId: null };
+  }
+});
+
+ipcMain.handle("codexpp:routing-set-auto", (_event, enabled) => {
+  return routing.setAutoRoute(enabled);
+});
+
+ipcMain.handle("codexpp:routing-learn-owner", (_event, threadId, accountId) => {
+  return routing.learnThreadOwner(threadId, accountId);
+});
+
+ipcMain.handle("codexpp:routing-suggest", async (_event, excluded) => {
+  try {
+    const list = store.accounts();
+    const learned = routing.read().learnedIneligible;
+    return routing.chooseAccount(list, excluded, learned);
+  } catch (err) {
+    console.error("==> codexpp routing-suggest error:", err.message);
+    return null;
+  }
+});
+
+ipcMain.handle("codexpp:routing-mark-ineligible", (_event, accountId, reason) => {
+  return routing.markIneligible(accountId, reason);
+});
+
+ipcMain.handle("codexpp:routing-clear-ineligible", (_event, accountId) => {
+  return routing.clearIneligible(accountId);
+});
+
 store.setActive(null);
 usage.refreshAll({ force: true }).catch(() => {});
 
 console.log("==> codexpp hub started");
+
