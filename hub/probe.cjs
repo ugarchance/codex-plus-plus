@@ -11,7 +11,8 @@ function open() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "codexpp-probe-"));
   const child = spawn(codexBinary(), ["app-server"], {
     env: { ...process.env, CODEX_HOME: home, RUST_LOG: "error" },
-    stdio: ["pipe", "pipe", "ignore"]
+    stdio: ["pipe", "pipe", "ignore"],
+    windowsHide: true
   });
 
   const pending = new Map();
@@ -55,10 +56,28 @@ function open() {
     });
   };
 
-  const close = () => {
-    child.kill();
-    fs.rmSync(home, { recursive: true, force: true });
-  };
+  const close = () =>
+    new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        try {
+          fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        } catch {
+          // a locked sqlite file must not cost the collected results; the temp dir is cosmetic
+        }
+        resolve();
+      };
+      child.once("exit", finish);
+      const giveUp = setTimeout(finish, 5000);
+      giveUp.unref?.();
+      try {
+        child.kill();
+      } catch {
+        finish();
+      }
+    });
 
   return { send, close, child };
 }
@@ -101,7 +120,7 @@ async function readUsage(credentials) {
       }
     }
   } finally {
-    session.close();
+    await session.close();
   }
 
   return results;

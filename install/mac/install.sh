@@ -8,7 +8,7 @@ APP_NAME="Codex++"
 USER_DATA_DIR="${USER_DATA_DIR:-$HOME/Library/Application Support/CodexPP}"
 CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENT="$REPO_DIR/.build/entitlements.plist"
 
 die() { echo "error: $*" >&2; exit 1; }
@@ -40,7 +40,7 @@ install_launcher() {
   clang -O2 -Wall -Wextra \
         -DREAL_EXEC="\"$APP_NAME-bin\"" \
         -DUSER_DATA_DIR="\"$USER_DATA_DIR\"" \
-        -o "$macos/$APP_NAME" "$REPO_DIR/src/launcher.c"
+        -o "$macos/$APP_NAME" "$REPO_DIR/install/mac/launcher.c"
 }
 
 apply_patches() {

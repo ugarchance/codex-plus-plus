@@ -70,7 +70,7 @@ function findFiles(baseDir, pattern) {
       if (entry.isDirectory()) {
         walk(fullPath);
       } else if (entry.isFile()) {
-        const relPath = path.relative(baseDir, fullPath);
+        const relPath = path.relative(baseDir, fullPath).split(path.sep).join("/");
         if (regex.test(relPath)) {
           matches.push(relPath);
         }
@@ -117,7 +117,7 @@ function buildStreams(baseDir, unpackedFiles, unpackedDirs) {
       .sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       const fullPath = path.join(currentDir, entry.name);
-      const relPath = path.relative(baseDir, fullPath);
+      const relPath = path.relative(baseDir, fullPath).split(path.sep).join("/");
 
       if (entry.isDirectory()) {
         streams.push({
