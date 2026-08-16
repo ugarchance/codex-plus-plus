@@ -87,3 +87,25 @@ ipcMain.handle("codexpp:add-account-device-code", async (_event, label, timeoutM
   }
 });
 
+const resets = require("./resets.cjs");
+
+ipcMain.handle("codexpp:reset-credits", async (_event, accountId, force) => {
+  try {
+    const data = await resets.creditsFor(accountId, { force: force === true });
+    return { ok: true, data };
+  } catch (err) {
+    console.error("==> codexpp reset-credits failed:", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("codexpp:consume-reset", async (_event, accountId, creditId, redeemRequestId) => {
+  try {
+    const data = await resets.consumeCredit(accountId, creditId, redeemRequestId);
+    return { ok: true, data };
+  } catch (err) {
+    console.error("==> codexpp consume-reset failed:", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+
