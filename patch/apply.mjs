@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { extractAll, getRawHeader, createPackageFromStreams } from "@electron/asar";
 import patches from "./patches/index.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function info(msg) {
   console.log(`==> ${msg}`);
@@ -20,13 +24,15 @@ function parseArgs(args) {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "-h" || arg === "--help") {
-      console.log("Usage: node patch/apply.mjs --src <source app.asar> --out <target app.asar> [--work <scratch dir>]");
+      console.log("Usage: node patch/apply.mjs --src <source app.asar> [--out <target app.asar>] [--work <scratch dir>] [--check-only] [--allow-untested-source]");
       console.log("");
       console.log("Options:");
-      console.log("  --src <file>   path to the source app.asar");
-      console.log("  --out <file>   path to the target app.asar");
-      console.log("  --work <dir>   optional scratch directory");
-      console.log("  -h, --help     show this message");
+      console.log("  --src <file>              path to the source app.asar");
+      console.log("  --out <file>              path to the target app.asar");
+      console.log("  --work <dir>              optional scratch directory");
+      console.log("  --check-only              check source compatibility and exit without patching");
+      console.log("  --allow-untested-source   proceed even if source build is untested");
+      console.log("  -h, --help                show this message");
       process.exit(0);
     } else if (arg === "--src") {
       if (i + 1 >= args.length) die("--src needs a value");
@@ -43,6 +49,10 @@ function parseArgs(args) {
       options.work = args[++i];
     } else if (arg.startsWith("--work=")) {
       options.work = arg.slice(7);
+    } else if (arg === "--check-only") {
+      options.checkOnly = true;
+    } else if (arg === "--allow-untested-source") {
+      options.allowUntestedSource = true;
     } else {
       die(`unknown argument: ${arg}`);
     }
@@ -153,11 +163,62 @@ function buildStreams(baseDir, unpackedFiles, unpackedDirs) {
   return streams;
 }
 
+function computeSha256(filePath) {
+  const hash = crypto.createHash("sha256");
+  const data = fs.readFileSync(filePath);
+  hash.update(data);
+  return hash.digest("hex");
+}
+
+function verifyCompatibility(srcPath, allowUntestedSource) {
+  const compatPath = path.join(__dirname, "compatibility.json");
+  if (!fs.existsSync(compatPath)) {
+    die(`compatibility manifest not found: ${compatPath}`);
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(compatPath, "utf-8"));
+  } catch (err) {
+    die(`failed to parse compatibility manifest: ${err.message}`);
+  }
+
+  const actualSha256 = computeSha256(srcPath);
+  const matched = (manifest.testedBuilds || []).find(
+    (b) => b.asarSha256 && b.asarSha256.toLowerCase() === actualSha256.toLowerCase()
+  );
+
+  if (matched) {
+    info(`source build verified: ${matched.version} (${matched.build}) on ${matched.platform}`);
+    info(`asar sha256: ${actualSha256}`);
+    return { ok: true, matched, actualSha256 };
+  }
+
+  if (allowUntestedSource) {
+    info(`warning: untested source build (sha256: ${actualSha256}); proceeding because --allow-untested-source is set`);
+    return { ok: true, matched: null, actualSha256 };
+  }
+
+  die(`untested source asar (sha256: ${actualSha256}). Pass --allow-untested-source to proceed.`);
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
 
+  if (options.checkOnly) {
+    if (!options.src) {
+      die("--check-only requires --src <source app.asar>");
+    }
+    const srcPath = path.resolve(options.src);
+    if (!fs.existsSync(srcPath)) {
+      die(`source asar not found: ${srcPath}`);
+    }
+    verifyCompatibility(srcPath, options.allowUntestedSource);
+    info("check complete: source is compatible");
+    return;
+  }
+
   if (!options.src || !options.out) {
-    die("usage: node patch/apply.mjs --src <source app.asar> --out <target app.asar> [--work <scratch dir>]");
+    die("usage: node patch/apply.mjs --src <source app.asar> --out <target app.asar> [--work <scratch dir>] [--check-only] [--allow-untested-source]");
   }
 
   const srcPath = path.resolve(options.src);
@@ -166,6 +227,8 @@ async function main() {
   if (!fs.existsSync(srcPath)) {
     die(`source asar not found: ${srcPath}`);
   }
+
+  verifyCompatibility(srcPath, options.allowUntestedSource);
 
   const isCustomWorkDir = Boolean(options.work);
   const workDir = isCustomWorkDir
