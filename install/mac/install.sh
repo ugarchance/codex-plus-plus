@@ -22,9 +22,21 @@ require_source() {
   info "source version: $v"
 }
 
+backup_existing_app() {
+  if [ -e "$DEST_APP" ] || [ -d "$DEST_APP" ]; then
+    local ts backup_dir backup_target
+    ts="$(date -u +%Y%m%d%H%M%SZ)"
+    backup_dir="$USER_DATA_DIR/backups"
+    backup_target="$backup_dir/${APP_NAME}-${ts}.app"
+    info "backing up existing app -> $backup_target"
+    mkdir -p "$backup_dir"
+    mv "$DEST_APP" "$backup_target"
+  fi
+}
+
 copy_bundle() {
+  backup_existing_app
   info "copying -> $DEST_APP"
-  rm -rf "$DEST_APP"
   ditto "$SRC_APP" "$DEST_APP"
   rm -f "$DEST_APP/Contents/embedded.provisionprofile"
   rm -rf "$DEST_APP/Contents/_CodeSignature"
