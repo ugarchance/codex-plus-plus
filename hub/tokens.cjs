@@ -1,4 +1,5 @@
 const store = require("./store.cjs");
+const native = require("./native.cjs");
 const { authClaims } = require("./claims.cjs");
 
 const CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
@@ -19,7 +20,7 @@ async function exchange(refreshToken) {
     })
   });
   if (!response.ok) {
-    throw new Error(`token yenilenemedi: HTTP ${response.status}`);
+    throw new Error(`token refresh failed: HTTP ${response.status}`);
   }
   return response.json();
 }
@@ -27,6 +28,14 @@ async function exchange(refreshToken) {
 async function refreshAccount(account) {
   const data = await exchange(account.refreshToken);
   const claims = authClaims(data.access_token);
+
+  if (account.native) {
+    return native.writeTokens({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token ?? account.refreshToken
+    });
+  }
+
   return store.updateAccount(account.id, {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? account.refreshToken,
@@ -37,15 +46,19 @@ async function refreshAccount(account) {
 }
 
 function selectAccount(data, hostId, params) {
-  const byAssignment = data.accounts.find((a) => a.id === data.assignments?.[hostId]);
+  const list = store.accounts(data);
+
+  const byAssignment = list.find((a) => a.id === data.assignments?.[hostId]);
   if (byAssignment) return byAssignment;
 
   const previous = params?.previousAccountId;
-  const byPrevious = previous && data.accounts.find((a) => a.accountId === previous);
+  const byPrevious = previous && list.find((a) => a.accountId === previous);
   if (byPrevious) return byPrevious;
 
-  const byDefault = data.accounts.find((a) => a.id === data.defaultAccountId);
-  return byDefault ?? data.accounts[0] ?? null;
+  const byActive = list.find((a) => a.id === store.activeAccountId(data));
+  if (byActive) return byActive;
+
+  return list.find((a) => a.id === data.defaultAccountId) ?? list[0] ?? null;
 }
 
 function asResponse(account) {
@@ -59,6 +72,7 @@ function asResponse(account) {
 
 async function fresh(account) {
   if (account.accessToken && account.expiresAt - CLOCK_SKEW_MS > Date.now()) return account;
+  if (!account.refreshToken) return null;
 
   if (!inFlight.has(account.id)) {
     inFlight.set(account.id, refreshAccount(account).finally(() => inFlight.delete(account.id)));
@@ -71,10 +85,16 @@ async function accessTokenFor(account) {
   return (await fresh(account))?.accessToken ?? null;
 }
 
+async function credentialsFor(accountId) {
+  const account = store.findAccount(accountId);
+  if (!account) return null;
+  return asResponse(await fresh(account));
+}
+
 async function tokenForHost(hostId, params) {
   const account = selectAccount(store.read(), hostId, params);
   if (!account) return null;
   return asResponse(await fresh(account));
 }
 
-module.exports = { tokenForHost, refreshAccount, accessTokenFor };
+module.exports = { tokenForHost, refreshAccount, accessTokenFor, credentialsFor };

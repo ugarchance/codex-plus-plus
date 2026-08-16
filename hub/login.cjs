@@ -26,7 +26,7 @@ function runLogin(codexHome) {
     child.on("error", reject);
     child.on("close", (code) => {
       if (code === 0) resolve();
-      else reject(new Error(stderr.trim() || `codex login çıkış kodu ${code}`));
+      else reject(new Error(stderr.trim() || `codex login exited with code ${code}`));
     });
   });
 }
@@ -37,12 +37,12 @@ async function addAccount(label) {
     await runLogin(codexHome);
 
     const authFile = path.join(codexHome, "auth.json");
-    if (!fs.existsSync(authFile)) throw new Error("giriş sonrası auth.json oluşmadı");
+    if (!fs.existsSync(authFile)) throw new Error("no auth.json was created after login");
 
     const auth = JSON.parse(fs.readFileSync(authFile, "utf8"));
     const refreshToken = auth?.tokens?.refresh_token;
     const accessToken = auth?.tokens?.access_token;
-    if (!refreshToken) throw new Error("auth.json içinde refresh token yok");
+    if (!refreshToken) throw new Error("auth.json has no refresh token");
 
     const claims = authClaims(accessToken);
     const identity = decodeClaims(auth?.tokens?.id_token);
@@ -51,7 +51,7 @@ async function addAccount(label) {
 
     return store.upsertAccount({
       id: randomUUID(),
-      label: label ?? identity.name ?? email ?? `Abonelik ${existingCount + 1}`,
+      label: label ?? identity.name ?? email ?? `Subscription ${existingCount + 1}`,
       email,
       avatarUrl: identity.picture ?? null,
       accountId: claims.chatgpt_account_id ?? auth?.tokens?.account_id ?? null,

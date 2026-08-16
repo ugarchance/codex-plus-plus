@@ -13,7 +13,7 @@ export default {
   glob: ".vite/build/bootstrap-*.js",
   marker: GUARD,
   apply(source) {
-    const [anchor] = matchOnce(source, PATTERN, "userData yol degisimi");
+    const [anchor] = matchOnce(source, PATTERN, "userData path switch");
     const guarded =
       `(process.argv.some(${GUARD}=>${GUARD}.startsWith(\`--user-data-dir=\`))||${anchor})`;
     return replaceOnce(source, anchor, guarded);

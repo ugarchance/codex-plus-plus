@@ -11,7 +11,7 @@ function info(msg) {
 }
 
 function die(msg) {
-  console.error(`hata: ${msg}`);
+  console.error(`error: ${msg}`);
   process.exit(1);
 }
 
@@ -20,31 +20,31 @@ function parseArgs(args) {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "-h" || arg === "--help") {
-      console.log("Kullanım: node patch/apply.mjs --src <kaynak app.asar> --out <hedef app.asar> [--work <geçici dizin>]");
+      console.log("Usage: node patch/apply.mjs --src <source app.asar> --out <target app.asar> [--work <scratch dir>]");
       console.log("");
-      console.log("Seçenekler:");
-      console.log("  --src <dosya>   Kaynak app.asar dosya yolu");
-      console.log("  --out <dosya>   Hedef app.asar dosya yolu");
-      console.log("  --work <dizin>  İsteğe bağlı geçici çalışma dizini");
-      console.log("  -h, --help      Yardım mesajını gösterir");
+      console.log("Options:");
+      console.log("  --src <file>   path to the source app.asar");
+      console.log("  --out <file>   path to the target app.asar");
+      console.log("  --work <dir>   optional scratch directory");
+      console.log("  -h, --help     show this message");
       process.exit(0);
     } else if (arg === "--src") {
-      if (i + 1 >= args.length) die("--src değeri eksik");
+      if (i + 1 >= args.length) die("--src needs a value");
       options.src = args[++i];
     } else if (arg.startsWith("--src=")) {
       options.src = arg.slice(6);
     } else if (arg === "--out") {
-      if (i + 1 >= args.length) die("--out değeri eksik");
+      if (i + 1 >= args.length) die("--out needs a value");
       options.out = args[++i];
     } else if (arg.startsWith("--out=")) {
       options.out = arg.slice(6);
     } else if (arg === "--work") {
-      if (i + 1 >= args.length) die("--work değeri eksik");
+      if (i + 1 >= args.length) die("--work needs a value");
       options.work = args[++i];
     } else if (arg.startsWith("--work=")) {
       options.work = arg.slice(7);
     } else {
-      die(`bilinmeyen argüman: ${arg}`);
+      die(`unknown argument: ${arg}`);
     }
   }
   return options;
@@ -157,14 +157,14 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
 
   if (!options.src || !options.out) {
-    die("kullanım: node patch/apply.mjs --src <kaynak app.asar> --out <hedef app.asar> [--work <geçici dizin>]");
+    die("usage: node patch/apply.mjs --src <source app.asar> --out <target app.asar> [--work <scratch dir>]");
   }
 
   const srcPath = path.resolve(options.src);
   const outPath = path.resolve(options.out);
 
   if (!fs.existsSync(srcPath)) {
-    die(`kaynak asar dosyası bulunamadı: ${srcPath}`);
+    die(`source asar not found: ${srcPath}`);
   }
 
   const isCustomWorkDir = Boolean(options.work);
@@ -175,7 +175,7 @@ async function main() {
   if (isCustomWorkDir && fs.existsSync(workDir)) {
     const entries = fs.readdirSync(workDir);
     if (entries.length > 0) {
-      die(`çalışma dizini boş değil: ${workDir}`);
+      die(`work directory is not empty: ${workDir}`);
     }
   }
 
@@ -188,13 +188,19 @@ async function main() {
 
     const { unpackedFiles, unpackedDirs } = collectSourceUnpackedSets(srcPath);
 
-    info(`kaynak asar açılıyor -> ${workDir}`);
+    info(`extracting source asar -> ${workDir}`);
     extractAll(srcPath, workDir);
 
     for (const patch of patches) {
-      const matches = findFiles(workDir, patch.glob);
+      let matches = findFiles(workDir, patch.glob);
+      if (patch.select) {
+        matches = matches.filter((rel) =>
+          fs.readFileSync(path.join(workDir, rel), "utf-8").includes(patch.select)
+        );
+      }
       if (matches.length !== 1) {
-        throw new Error(`yama ${patch.id} için glob (${patch.glob}) tam olarak 1 dosya ile eşleşmeliydi, ${matches.length} dosya bulundu`);
+        const how = patch.select ? `${patch.glob} + "${patch.select}"` : patch.glob;
+        throw new Error(`patch ${patch.id}: glob (${how}) had to match exactly one file, matched ${matches.length}`);
       }
 
       const relFile = matches[0];
@@ -202,11 +208,11 @@ async function main() {
       const source = fs.readFileSync(targetFile, "utf-8");
 
       if (patch.marker && source.includes(patch.marker)) {
-        info(`yama zaten uygulanmış: ${patch.id} (${relFile})`);
+        info(`already applied: ${patch.id} (${relFile})`);
         continue;
       }
 
-      info(`yama uygulanıyor: ${patch.id} (${relFile})`);
+      info(`applying: ${patch.id} (${relFile})`);
       const patched = patch.apply(source);
       fs.writeFileSync(targetFile, patched, "utf-8");
     }
@@ -217,7 +223,7 @@ async function main() {
     }
 
     tempOut = path.join(outDir, `.tmp-${path.basename(outPath)}-${Date.now()}`);
-    info(`paketleniyor -> ${outPath}`);
+    info(`packing -> ${outPath}`);
 
     const streams = buildStreams(workDir, unpackedFiles, unpackedDirs);
     await createPackageFromStreams(tempOut, streams);
@@ -262,11 +268,11 @@ async function main() {
   }
 
   if (!isCustomWorkDir && fs.existsSync(workDir)) {
-    info("geçici dizin temizleniyor");
+    info("cleaning up scratch directory");
     fs.rmSync(workDir, { recursive: true, force: true });
   }
 
-  info("tamamlandı");
+  info("done");
 }
 
 main();

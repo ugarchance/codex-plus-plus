@@ -9,11 +9,11 @@ export default {
   glob: "webview/assets/app-initial-*.js",
   marker: "__codexpp?.authRefresh",
   apply(source) {
-    const [, toRequestId, idVar] = matchOnce(source, ID_PATTERN, "istek id donusturucu");
-    const [, destructuredId, paramsVar] = matchOnce(source, REQUEST_PATTERN, "onRequest ayristirma");
+    const [, toRequestId, idVar] = matchOnce(source, ID_PATTERN, "request id mapper");
+    const [, destructuredId, paramsVar] = matchOnce(source, REQUEST_PATTERN, "onRequest destructuring");
 
     if (idVar !== destructuredId) {
-      throw new Error(`istek id degiskeni tutarsiz: ${idVar} ve ${destructuredId}`);
+      throw new Error(`request id variable mismatch: ${idVar} and ${destructuredId}`);
     }
 
     const send = (body) =>
@@ -24,7 +24,7 @@ export default {
       "case`account/chatgptAuthTokens/refresh`:{" +
       `const _cxpHost=this,_cxpId=${toRequestId}(${idVar});` +
       `Promise.resolve(globalThis.__codexpp?.authRefresh?.(this.hostId,${paramsVar}))` +
-      `.then(_cxpToken=>${send("_cxpToken?{id:_cxpId,result:_cxpToken}:{id:_cxpId,error:{code:-32603,message:`codexpp: hesap icin token bulunamadi`}}")})` +
+      `.then(_cxpToken=>${send("_cxpToken?{id:_cxpId,result:_cxpToken}:{id:_cxpId,error:{code:-32603,message:`codexpp: no token for this account`}}")})` +
       `.catch(_cxpErr=>${send("{id:_cxpId,error:{code:-32603,message:String(_cxpErr)}}")});` +
       "break}case`attestation/generate`:break;";
 

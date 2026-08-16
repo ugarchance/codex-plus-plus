@@ -11,19 +11,19 @@ CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENT="$REPO_DIR/.build/entitlements.plist"
 
-die() { echo "hata: $*" >&2; exit 1; }
+die() { echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
 require_source() {
-  [ -d "$SRC_APP" ] || die "kaynak uygulama yok: $SRC_APP"
-  [ -f "$SRC_APP/Contents/Resources/app.asar" ] || die "app.asar bulunamadi, beklenmeyen surum"
+  [ -d "$SRC_APP" ] || die "source app not found: $SRC_APP"
+  [ -f "$SRC_APP/Contents/Resources/app.asar" ] || die "app.asar not found, unexpected build"
   local v
   v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$SRC_APP/Contents/Info.plist")"
-  info "kaynak surum: $v"
+  info "source version: $v"
 }
 
 copy_bundle() {
-  info "kopyalaniyor -> $DEST_APP"
+  info "copying -> $DEST_APP"
   rm -rf "$DEST_APP"
   ditto "$SRC_APP" "$DEST_APP"
   rm -f "$DEST_APP/Contents/embedded.provisionprofile"
@@ -31,8 +31,8 @@ copy_bundle() {
 }
 
 install_launcher() {
-  info "launcher derleniyor"
-  command -v clang >/dev/null || die "clang yok. Xcode Command Line Tools gerekli: xcode-select --install"
+  info "compiling launcher"
+  command -v clang >/dev/null || die "clang not found. Xcode Command Line Tools required: xcode-select --install"
   local macos="$DEST_APP/Contents/MacOS"
   local real
   real="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$SRC_APP/Contents/Info.plist")"
@@ -44,10 +44,10 @@ install_launcher() {
 }
 
 apply_patches() {
-  info "asar yamalaniyor"
-  command -v node >/dev/null || die "node yok. Node.js gerekli: https://nodejs.org"
+  info "patching asar"
+  command -v node >/dev/null || die "node not found. Node.js required: https://nodejs.org"
   if [ ! -d "$REPO_DIR/patch/node_modules" ]; then
-    info "patch bagimliliklari kuruluyor"
+    info "installing patch dependencies"
     npm --prefix "$REPO_DIR/patch" install --no-audit --no-fund
   fi
   node "$REPO_DIR/patch/apply.mjs" \
@@ -56,14 +56,14 @@ apply_patches() {
 }
 
 install_hub() {
-  info "hub kopyalaniyor"
+  info "copying hub"
   local res="$DEST_APP/Contents/Resources"
   rm -rf "$res/hub"
   cp -R "$REPO_DIR/hub" "$res/hub"
 }
 
 edit_plist() {
-  info "Info.plist duzenleniyor"
+  info "editing Info.plist"
   local pl="$DEST_APP/Contents/Info.plist"
   plutil -remove ElectronAsarIntegrity "$pl" 2>/dev/null || true
   plutil -replace CFBundleIdentifier -string "$BUNDLE_ID" "$pl"
@@ -103,7 +103,7 @@ PLIST
 }
 
 sign_bundle() {
-  info "ad-hoc imzalaniyor (icten disa)"
+  info "ad-hoc signing (inside out)"
   find "$DEST_APP" -mindepth 1 \
        \( -name '*.app' -o -name '*.framework' -o -name '*.xpc' \
           -o -name '*.docktileplugin' -o -name '*.dylib' -o -name '*.so' -o -name '*.node' \) \
@@ -112,7 +112,7 @@ sign_bundle() {
         [ -e "$p" ] || continue
         codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$p" 2>/dev/null \
           || codesign --force --sign - --timestamp=none "$p" 2>/dev/null \
-          || echo "    ! imzalanamadi: ${p#"$DEST_APP"/}"
+          || echo "    ! could not sign: ${p#"$DEST_APP"/}"
       done
 
   local res="$DEST_APP/Contents/Resources"
@@ -124,19 +124,19 @@ sign_bundle() {
            --entitlements "$ENT" "$DEST_APP/Contents/MacOS/$APP_NAME-bin"
 
   codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$DEST_APP"
-  codesign --verify --strict "$DEST_APP" || die "imza dogrulanamadi"
+  codesign --verify --strict "$DEST_APP" || die "signature verification failed"
   xattr -cr "$DEST_APP" 2>/dev/null || true
 }
 
 summary() {
-  info "kurulum tamam"
+  info "install complete"
   echo
-  echo "  uygulama    : $DEST_APP"
+  echo "  app         : $DEST_APP"
   echo "  bundle id   : $BUNDLE_ID"
   echo "  user data   : $USER_DATA_DIR"
-  echo "  CODEX_HOME  : $CODEX_HOME_SHARED  (orijinal ile ortak)"
+  echo "  CODEX_HOME  : $CODEX_HOME_SHARED  (shared with the original)"
   echo
-  echo "  ac: open -a \"$DEST_APP\""
+  echo "  run: open -a \"$DEST_APP\""
 }
 
 case "${1:-install}" in
@@ -152,11 +152,11 @@ case "${1:-install}" in
     summary
     ;;
   uninstall)
-    info "kaldiriliyor: $DEST_APP"
+    info "removing: $DEST_APP"
     rm -rf "$DEST_APP"
-    echo "not: $USER_DATA_DIR silinmedi. gerekiyorsa elle sil."
+    echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;
   *)
-    die "kullanim: $0 [install|uninstall]"
+    die "usage: $0 [install|uninstall]"
     ;;
 esac

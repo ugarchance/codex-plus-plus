@@ -1,81 +1,156 @@
-# Çalışma kuralları
+# Working rules
 
-## Minified bundle'da kod bulma
+## The one rule
 
-`webview/assets/app-initial-*.js` 14 MB, tek satır, isimleri küçültülmüş.
-Burada `grep` ile deneme yanılma yapmak zaman kaybı. Genelden özele giden
-sıra şu:
+**Go from the most general to the most specific, and write down every step.**
 
-**1. Parser kur, gözle arama.** `acorn` + `acorn-walk` + `prettier` bir
-kenara kurulur (`patch/` altına değil, geçici bir dizine). 14 MB dosya
-acorn ile ~3 saniyede parse olur.
+When something does not work, do not start changing code. Narrow it down:
 
-**2. Sabit bir dizeden başla.** Kullanıcıya görünen metin, React `key`
-değeri, i18n id'si — bunlar minify edilmez. Örnek: `sign-in-openai`.
-Dikkat: bu bundle'da dizeler **template literal** olarak yazılıyor, yani
-AST'de `Literal` değil `TemplateElement` düğümü.
+1. State what you observe, precisely. "The menu is empty" is not the same as
+   "the block runs but nothing reaches the DOM".
+2. Find the widest layer that could explain it, and rule that layer in or out
+   with a measurement — not with a guess.
+3. Only then go one layer deeper.
+4. Log each step with the evidence that closed it. The log is the deliverable;
+   the fix is a side effect.
 
-**3. Kapsayan fonksiyonu çıkar.** `walk.ancestor` ile atalar zincirini al,
-en yakın fonksiyon düğümünün `[start, end]` aralığını dosyadan kes,
-`prettier` ile biçimlendir, dosyaya yaz. Artık okunabilir 1000 satırlık
-bir bileşen var.
+Trial-and-error edits look faster and are not. Every time this rule was skipped
+in this repo, the result was code that ran, logged, pushed into an array — and
+changed nothing on screen.
 
-**4. Veri akışını oku, tahmin etme.** Bu bundle React Compiler'dan geçmiş:
-her değer `t[N]` memo yuvalarıyla sarılı ve blokların yarısı
-`if (t[k] !== dep) { ... } else { ... }` biçiminde. Aranan şey:
+Measurements beat opinions. A throwaway script that spawns `codex app-server`
+against a temporary `CODEX_HOME` answers "does this even work" in a minute and
+risks nothing.
 
-- Değer hangi diziye/değişkene giriyor?
-- O değişken **gerçekten render ediliyor mu**? `children:[...]` dizisine
-  kadar takip et.
-- Fonksiyonda **erken `return` var mı?** Bir bloğun çalışması render
-  edildiği anlamına gelmez.
+## Finding code in the minified bundle
 
-**5. Bağımlı tanımları da çıkar.** Bir isim (`Mcl`, `GV`, `KV`) tekrar
-AST'den aranıp aynı yöntemle biçimlendirilir. Bileşenin prop sözleşmesi
-destructuring satırından okunur.
+`webview/assets/app-initial-*.js` is 14 MB, one line, names minified. Poking at
+it with `grep` is a waste of time. Work from general to specific:
 
-**6. Çağrı yerlerini say.** Bir dal ölü mü canlı mı, ancak çağıranlara
-bakınca anlaşılır. `sidebarFooter` sekiz yerde geçiyordu; tek anlamlı
-çağrı yeri ölü dalın hangisi olduğunu söyledi.
+**1. Set up a parser and read with your eyes.** Install `acorn` +
+`acorn-walk` + `prettier` somewhere temporary (not under `patch/`). Acorn
+parses the 14 MB file in about three seconds.
 
-Bu sıra izlenmezse ne oluyor: kod çalışıyor, log basıyor, diziye eleman
-ekliyor — ama DOM'a hiçbir şey gelmiyor, çünkü o dizi kullanılmayan bir
-dalda.
+**2. Start from a constant string.** User-visible text, React `key` values,
+i18n ids, error messages — these are not minified. `sign-in-openai`, or
+`does not match AppServerManager hostId`. Careful: strings in this bundle are
+written as **template literals**, so in the AST they are `TemplateElement`
+nodes, not `Literal`.
 
-## Çapa yazma
+**3. Extract the enclosing function.** Take the ancestor chain with
+`walk.ancestor`, cut the `[start, end]` range of the nearest function node out
+of the file, format it with `prettier`, write it to disk. Now you have a
+readable thousand-line component. For an anonymous class, wrap the slice in
+`const X = ...;` before handing it to prettier.
 
-Çapa **minified isme değil, anlama** dayanmalı. Sırasıyla tercih edilir:
+**4. Read the data flow, don't guess.** This bundle went through the React
+Compiler: every value is wrapped in `t[N]` memo slots and half the blocks look
+like `if (t[k] !== dep) { ... } else { ... }`. What you are looking for:
 
-1. Protokol sabiti / React key / i18n id
-2. Prop destructuring imzası (`{accountIcon:X,accountLabel:Y,...}`)
-3. Yapısal desen (belirli sırada 9 elemanlı `children` dizisi)
+- Which array or variable does the value go into?
+- Is that variable **actually rendered**? Follow it all the way to the
+  `children:[...]` array.
+- Is there an **early `return`** in the function? A block running does not mean
+  it is rendered.
 
-Minified isimler yamanın **çıktısı** olmalı, girdisi değil: desenden
-yakalanıp enjeksiyona geri yazılır. `matchOnce` her deseni tam 1 eşleşmeye
-zorlar; 0 veya 2 eşleşme yamanın sessizce yanlış yere gitmesi demektir.
+**5. Extract the dependencies too.** Look up a name (`Mcl`, `GV`, `KV`) in the
+AST again and format it the same way. Read the component's prop contract off
+its destructuring line.
 
-Regex'te isim deseni `[A-Za-z_$][\w$]*` — `\w` `$` karakterini yakalamaz,
-bu bundle'da `$5` gibi isimler var.
+**6. Count the call sites.** Whether a branch is dead or live only becomes
+clear from its callers. `sidebarFooter` appeared in eight places; the single
+meaningful call site said which branch was the dead one.
 
-Genel dosyada değil, **pencerede** ara: çapa noktasını bulduktan sonra
-`source.slice(index, index + N)` ile bileşenin gövdesine in, alt desenleri
-orada `matchOnce` ile çöz. Aynı desen 14 MB içinde onlarca kez geçebilir.
+## Writing anchors
 
-## Doğrulama
+An anchor must be based on **meaning, not on a minified name**. In order of
+preference:
 
-Yama uygulandıktan sonra tek başına yeterli değil:
+1. Protocol constant / React key / i18n id / untranslated error string
+2. Prop destructuring signature (`{accountIcon:X,accountLabel:Y,...}`)
+3. Structural pattern (a `children` array of nine elements in a fixed order)
 
-- `node --check` ile söz dizimi
-- Uygulamayı `--remote-debugging-port` ile başlat, CDP üzerinden menüyü
-  `Input.dispatchMouseEvent` ile aç (sentetik `.click()` React'te çalışmaz)
-- DOM'dan gerçek metni oku, ekran görüntüsü al
+Minified names must be the **output** of a patch, not its input: capture them
+from a pattern and write them back into the injection. `matchOnce` forces every
+pattern to exactly one match; 0 or 2 matches means the patch quietly went to
+the wrong place. When a pattern legitimately has N matches, assert N
+explicitly — never take "the first one".
 
-`~/Library/Application Support/CodexPP/SingletonLock` bayat kalırsa
-uygulama "Opening in existing browser session." deyip çıkar; kilit
-dosyasının işaret ettiği pid yaşamıyorsa silinir.
+Things that have bitten us here, all worth checking before you trust a patch:
 
-## Sınırlar
+- The identifier pattern in a regex is `[A-Za-z_$][\w$]*`. `\w` does not match
+  `$`, and this bundle has names like `$5`.
+- Search in a **window**, not in the whole file. Once you have the anchor
+  point, slice into the component body with `source.slice(index, index + N)`
+  and resolve sub-patterns there. The same pattern can appear dozens of times
+  in 14 MB.
+- Do not use `String.replace` with a short fragment to finish a patch. Splice
+  by index on the match you already validated, or you will hit an earlier
+  occurrence somewhere else in the file.
+- Injected helpers are only visible inside the closure they land in. Code that
+  a distant chunk has to call belongs on `globalThis`, defined at the top of
+  the file, not next to the component.
+- When a glob matches more than one file, narrow it with the patch's `select`
+  field — a string only the intended file contains. Do not narrow with a
+  hashed filename; those change on every release.
+- Every patch needs a `marker` that is present after it is applied and absent
+  before, so re-running the installer is a no-op.
 
-- `/Applications/ChatGPT.app` salt okunur. Asla değiştirilmez.
-- Token değerleri yazdırılmaz — sadece anahtar adı, hash, boolean karşılaştırma.
-- GitHub'a push açık onay olmadan yapılmaz.
+## Patching the UI
+
+- A synthetic `.click()` does nothing in React. Drive the real thing with CDP
+  `Input.dispatchMouseEvent`.
+- Radix menu items select on `pointerup`, not on `click`. A nested button
+  inside a menu row has to stop `pointerdown`, `pointerup`, `mousedown`,
+  `mouseup` and `click`, and it is still worth keeping a short time guard so
+  one gesture cannot trigger two actions.
+- Do not lean on Tailwind variants that may not exist in the prebuilt CSS
+  (named groups, arbitrary values). Hover state via `useState` and an inline
+  style always works.
+- Two chart color tokens can resolve to the same value. Check the computed
+  color before assuming a palette looks varied.
+
+## When the app signs itself out
+
+Two auth surfaces have to agree, and the renderer is only one of them:
+
+- The renderer decides "am I signed in" from `authMode`, which arrives in the
+  `account/updated` notification.
+- The **main process** fetches `chatgpt.com/backend-api/...` on its own and
+  only attaches a token when `authMethod === "chatgpt"`. Without it the account
+  lookup reports `authenticatedAccountPresent=false` and the UI falls back to
+  the sign-in screen a few seconds later — long enough that it looks unrelated
+  to the switch that caused it.
+
+The app's stdout log is where this shows up: `desktop_fetch_auth_401`,
+`account_info_token_unavailable`, `auth_status_result`. Read the log before
+theorising about React.
+
+## Verification
+
+Applying the patch is not enough on its own:
+
+- `node --check`, or parse with acorn, for syntax
+- Start the app with `--remote-debugging-port`, open the menu over CDP, read
+  the real text out of the DOM, take a screenshot
+- Wait and look again. Some failures land seconds after the action.
+
+Practical notes:
+
+- The debugging port sometimes binds to IPv4 and sometimes to IPv6 — try both
+  `127.0.0.1` and `[::1]`.
+- `open -a` only passes `--args` when it actually launches a new instance. To
+  be sure the flags land, run `Contents/MacOS/Codex++` directly.
+- If `~/Library/Application Support/CodexPP/SingletonLock` goes stale the app
+  says "Opening in existing browser session." and exits; delete the lock file
+  if the pid it points at is not alive.
+- Write throwaway scripts to files. Long inline `node -e` snippets get mangled
+  by shell quoting.
+
+## Limits
+
+- `/Applications/ChatGPT.app` is read-only. Never modify it.
+- Never print token values — key names, hashes and boolean comparisons only.
+- Back up `~/.codex/auth.json` and the account store before any test that can
+  write to them, and restore them afterwards.
+- Do not push to GitHub without explicit approval.
