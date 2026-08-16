@@ -9,6 +9,8 @@ const EXIT = "_cxpExitIcon";
 const AVATAR = "_cxpAvatar";
 const ROW = "_cxpAccountRow";
 
+const esc = (name) => name.replace(/\$/g, "\\$");
+
 const HEAD_PATTERN =
   `function (${NAME})\\((${NAME})\\)\\{let ${NAME}=\\(0,${NAME}\\.c\\)\\(\\d+\\),` +
   "\\{accountIcon:" + NAME +
@@ -29,14 +31,14 @@ const HEAD_PATTERN =
   "\\}=\\2";
 
 const CALL_PATTERN = (component) =>
-  `\\(0,${NAME}\\.jsx\\)\\(${component},\\{accountIcon:${NAME},accountLabel:${NAME}` +
+  `\\(0,${NAME}\\.jsx\\)\\(${esc(component)},\\{accountIcon:${NAME},accountLabel:${NAME}` +
   `,additionalItems:${NAME},displayName:${NAME},identityItems:${NAME},isPetVisible:${NAME}` +
   `,onCopyUserId:${NAME},onLogOut:(${NAME}),`;
 
 const MENU_NS_PATTERN = `\\(0,(${NAME})\\.jsx\\)\\((${NAME})\\.ItemIcon,`;
 
 const ITEM_PATTERN = (jsx) =>
-  `\\(0,${jsx}\\.jsx\\)\\((${NAME}),\\{className:(${NAME})==null\\?\`opacity-100\`:void 0,` +
+  `\\(0,${esc(jsx)}\\.jsx\\)\\((${NAME}),\\{className:(${NAME})==null\\?\`opacity-100\`:void 0,` +
   `disabled:\\2==null,LeftIcon:${NAME},onClick:\\2,rightIcon:${NAME},children:${NAME}\\}\\)`;
 
 const CHILDREN_PATTERN = (usage) => {

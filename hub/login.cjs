@@ -9,7 +9,9 @@ const { decodeClaims, authClaims } = require("./claims.cjs");
 
 function codexBinary() {
   if (process.env.CODEX_BIN) return process.env.CODEX_BIN;
-  if (process.resourcesPath) return path.join(process.resourcesPath, "codex");
+  const name = process.platform === "win32" ? "codex.exe" : "codex";
+  if (process.resourcesPath) return path.join(process.resourcesPath, name);
+  if (process.platform === "win32") return name; // resolved from PATH
   return "/Applications/ChatGPT.app/Contents/Resources/codex";
 }
 
@@ -17,7 +19,8 @@ function runLogin(codexHome) {
   return new Promise((resolve, reject) => {
     const child = spawn(codexBinary(), ["login"], {
       env: { ...process.env, CODEX_HOME: codexHome },
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
     });
     let stderr = "";
     child.stderr.on("data", (chunk) => {

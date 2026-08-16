@@ -4,12 +4,20 @@ const path = require("node:path");
 
 const native = require("./native.cjs");
 
+function defaultDataDir() {
+  if (process.platform === "win32") {
+    const base = process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local");
+    return path.join(base, "CodexPP");
+  }
+  return path.join(os.homedir(), "Library", "Application Support", "CodexPP");
+}
+
 function userDataDir() {
   if (process.env.USER_DATA_DIR) return process.env.USER_DATA_DIR;
   try {
     return require("electron").app.getPath("userData");
   } catch {
-    return path.join(os.homedir(), "Library/Application Support/CodexPP");
+    return defaultDataDir();
   }
 }
 
