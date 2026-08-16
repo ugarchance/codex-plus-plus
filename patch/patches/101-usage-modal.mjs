@@ -102,6 +102,42 @@ function helpers({ jsx, react }) {
   ].join("\n");
 }
 
+// Find the semicolon that terminates the statement containing `from`,
+// scanning forward while tracking bracket depth, string literals and
+// template literals (including nested ${...} frames). Returns the absolute
+// index of the ';' or -1.
+function findStatementEnd(src, from) {
+  let depth = 0;
+  let tmplDepth = 0;
+  let mode = null; // null | "'" | '"' | '`'
+  for (let i = from; i < src.length; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+    if (mode === "'" || mode === '"') {
+      if (ch === "\\") { i += 1; continue; }
+      if (ch === mode) mode = null;
+      continue;
+    }
+    if (mode === "`") {
+      if (ch === "\\") { i += 1; continue; }
+      if (ch === "$" && next === "{") { tmplDepth += 1; mode = null; i += 1; continue; }
+      if (ch === "`") { mode = null; continue; }
+      continue;
+    }
+    if (ch === "'" || ch === '"') { mode = ch; continue; }
+    if (ch === "`") { mode = "`"; continue; }
+    if (ch === "(" || ch === "[" || ch === "{") { depth += 1; continue; }
+    if (ch === ")" || ch === "]") { depth -= 1; continue; }
+    if (ch === "}") {
+      if (tmplDepth > 0) { tmplDepth -= 1; mode = "`"; continue; }
+      depth -= 1;
+      continue;
+    }
+    if (ch === ";" && depth === 0 && tmplDepth === 0) return i;
+  }
+  return -1;
+}
+
 export default {
   id: "101-usage-modal",
   description: "Per-account reset credit selector and consumption in the usage limits modal",
@@ -181,20 +217,27 @@ export default {
     const newChildren = `children:[${headerSlot},(0,${jsx}.jsx)(${MODAL_BLOCK},{accounts:_cxpAccounts,selectedId:_cxpSelectedId,onSelect:_cxpSetSelectedId,creditsMap:_cxpCreditsMap,loadingMap:_cxpLoadingMap}),${restSlots.join(",")}]`;
 
     // 1. Prepend helper definitions before component definition
-    // 2. Inject state and overrides right after prop destructuring
+    // 2. Inject state and overrides AFTER the full `let` statement that
+    //    starts with the memo slot and the prop destructuring. The React
+    //    Compiler keeps chaining declarators after the destructuring
+    //    (`,p=...,m=Dd(),...`), so injecting right after `=<arg>` with a
+    //    semicolon would split the statement and produce invalid JS.
     // 3. Inject selector component into modal children array
 
     const helperCode = helpers({ jsx, react }) + "\n";
     const headEnd = start + fullHeadMatch.length;
+    const stmtEnd = findStatementEnd(source, headEnd);
+    if (stmtEnd === -1 || stmtEnd > start + children.index) {
+      throw new Error("usage modal let-statement terminator not found");
+    }
     const childrenOffset = start + children.index;
 
     const modified =
       source.slice(0, start) +
       helperCode +
-      source.slice(start, headEnd) +
-      ";" +
+      source.slice(start, stmtEnd + 1) +
       injectionHead +
-      source.slice(headEnd, childrenOffset) +
+      source.slice(stmtEnd + 1, childrenOffset) +
       newChildren +
       source.slice(childrenOffset + children[0].length);
 
