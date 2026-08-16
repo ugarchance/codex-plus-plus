@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractAll, getRawHeader, createPackageFromStreams } from "@electron/asar";
 import patches from "./patches/index.mjs";
+import * as acorn from "acorn";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -254,6 +255,8 @@ async function main() {
     info(`extracting source asar -> ${workDir}`);
     extractAll(srcPath, workDir);
 
+    const patchedFiles = [];
+
     for (const patch of patches) {
       let matches = findFiles(workDir, patch.glob);
       if (patch.select) {
@@ -278,6 +281,21 @@ async function main() {
       info(`applying: ${patch.id} (${relFile})`);
       const patched = patch.apply(source);
       fs.writeFileSync(targetFile, patched, "utf-8");
+      patchedFiles.push(relFile);
+    }
+
+    // Syntax gate: every patched file must still be valid JavaScript.
+    // webview asset bundles are ES modules; main-process/preload files are scripts.
+    for (const relFile of patchedFiles) {
+      const filePath = path.join(workDir, relFile);
+      const code = fs.readFileSync(filePath, "utf-8");
+      const sourceType = relFile.startsWith("webview/assets") ? "module" : "script";
+      try {
+        acorn.parse(code, { ecmaVersion: "latest", sourceType });
+        info(`syntax ok: ${relFile}`);
+      } catch (err) {
+        throw new Error(`patched file is not valid JavaScript (${relFile}): ${err.message}`);
+      }
     }
 
     const outDir = path.dirname(outPath);
