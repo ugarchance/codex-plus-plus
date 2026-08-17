@@ -7,6 +7,7 @@ const CHECK = "_cxpCheckIcon";
 const GAUGE = "_cxpGaugeIcon";
 const EXIT = "_cxpExitIcon";
 const ROUTE = "_cxpRouteIcon";
+const AUTOROW = "_cxpAutoRow";
 const ALERT = "_cxpAlertIcon";
 const AVATAR = "_cxpAvatar";
 const ROW = "_cxpAccountRow";
@@ -72,6 +73,25 @@ function block({ jsx, menu, item, react }) {
     icon("M12.25 6.25V4.75h-7.5v10.5h7.5v-1.5M8.75 10h8.5M14.75 7.5L17.25 10l-2.5 2.5").replace("_cxpIcon", EXIT),
     icon("M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0 1 13.66-4.66L20 7M20 15a8 8 0 0 1-13.66 4.66L4 17", "0 0 24 24").replace("_cxpIcon", ROUTE),
     icon("M10 3.25L2.5 16.75h15L10 3.25zM10 8v4M10 14.5v.5").replace("_cxpIcon", ALERT),
+
+    // Non-Radix row: clicking toggles auto-route WITHOUT closing the menu
+    // (stops pointer/mouse/click so Radix never sees an item activation),
+    // and shows a native tooltip explaining the control on hover.
+    `function ${AUTOROW}(_p){`,
+    `const[_hov,_setHov]=(0,${react}.useState)(!1);`,
+    `return(0,${jsx}.jsx)(\`div\`,{`,
+    `title:\`Otomatik yönlendirme: yeni sohbetleri plan/kota uygunluğuna göre en iyi hesaba yönlendirir. Tıklayınca aç/kapa; menü açık kalır.\`,`,
+    `onPointerDown:(e)=>e.stopPropagation(),onPointerUp:(e)=>e.stopPropagation(),`,
+    `onMouseDown:(e)=>e.stopPropagation(),onMouseUp:(e)=>e.stopPropagation(),`,
+    `onClick:(e)=>{e.stopPropagation();e.preventDefault();_p.onToggle();},`,
+    `onMouseEnter:()=>_setHov(!0),onMouseLeave:()=>_setHov(!1),`,
+    `className:\`relative mx-1 my-0.5 flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm\`,`,
+    `style:{backgroundColor:_hov?\`rgba(128,128,128,0.12)\`:\`transparent\`},`,
+    `children:[`,
+    `(0,${jsx}.jsx)(${ROUTE},{className:\`h-4 w-4 shrink-0\`}),`,
+    `(0,${jsx}.jsx)(\`span\`,{className:\`flex-1\`,children:\`Otomatik yönlendirme\`}),`,
+    `(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:_p.autoRoute?\`Açık\`:\`Kapalı\`})`,
+    `]},\`cxp-auto-route\`)}`,
 
     `const _cxpTones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];`,
     "const _cxpPlans={free:`Free`,plus:`Plus`,pro:`Pro`,team:`Team`,business:`Business`,enterprise:`Enterprise`};",
@@ -146,9 +166,7 @@ function block({ jsx, menu, item, react }) {
     "children:`Usage remaining`},`cxp-summary`)",
     ":_props.usage??null;",
 
-    `const _autoRow=(0,${jsx}.jsx)(${item},{LeftIcon:${ROUTE},onClick:_toggleAutoRoute,`,
-    `rightIcon:(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:_autoRoute?\`Açık\`:\`Kapalı\`}),`,
-    "children:`Otomatik yönlendirme`},`cxp-auto-route`);",
+    `const _autoRow=(0,${jsx}.jsx)(${AUTOROW},{autoRoute:_autoRoute,onToggle:_toggleAutoRoute});`,
 
     "_rows.push(",
     "_autoRow,",
