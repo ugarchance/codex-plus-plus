@@ -1,24 +1,24 @@
 /**
  * 101-usage-modal.mjs
  *
- * KESIF VE CAPA SECIMI:
- * 1. AST taramasinda `/wham/rate-limit-reset-credits` ve i18n anahtarlari
+ * DISCOVERY AND ANCHOR SELECTION:
+ * 1. Searched AST for `/wham/rate-limit-reset-credits` and i18n keys
  *    (`codex.rateLimitResetPromptModal.usageTrackingHeading`,
  *     `codex.rateLimitResetPromptModal.closeUsageModal`,
- *     `codex.rateLimitResetModal.error`) arandi.
- * 2. Kullanim/rate-limit modalinin govdesini olusturan bilesen tespit edildi:
- *    Prop destructuring imzasi tekil ve kararlidir:
+ *     `codex.rateLimitResetModal.error`).
+ * 2. Identified component constructing the usage/rate-limit modal body:
+ *    Prop destructuring signature is unique and stable:
  *    `{availableCount, availableResetCredits, defaultResetCreditsOpen, errorMessage, isLoadingResetCredits, isResetting, onAddCredits, onClose, onResetCredit, onUpgradePlan, usageWindows}`.
- * 3. Modal icerik dizilimi `children:[_e,Ce,we,Te]` yapisindadir:
- *    - `_e`: Baslik ve kapat butonu alani
- *    - `Ce`: Kullanim limit cubuklari (`xe`) ve reset kredileri akordeonu (`Se`)
- *    - `we`: Ayirici ve hata mesaji
- *    - `Te`: Plan yukseltme / kredi ekleme butonlari
- * 4. Secilen Capalar:
- *    - `HEAD_PATTERN`: Prop destructuring imzasina dayali regex (minified olmayan anlamli prop adlari).
- *    - `JSX_PATTERN`: Modal icerik kapsayicisi `(0, ${NAME}.jsxs)(${NAME}, {className: `overflow-y-auto` uzerinden JSX namespace tespiti.
- *    - `CHILDREN_PATTERN`: Modal icerik siralamasindaki 4 elemanli `children:[...]` dizisi.
- *    - `HOOKS_PATTERN`: React `useState` ve `useEffect` namespace tespiti.
+ * 3. Modal content structure follows `children:[_e,Ce,we,Te]`:
+ *    - `_e`: Title and close button area
+ *    - `Ce`: Usage limit bars (`xe`) and reset credits accordion (`Se`)
+ *    - `we`: Divider and error message
+ *    - `Te`: Upgrade plan / add credit buttons
+ * 4. Selected Anchors:
+ *    - `HEAD_PATTERN`: Regex based on prop destructuring signature (non-minified meaningful prop names).
+ *    - `JSX_PATTERN`: JSX namespace discovery via modal content container `(0, ${NAME}.jsxs)(${NAME}, {className: `overflow-y-auto`.
+ *    - `CHILDREN_PATTERN`: 4-element `children:[...]` array in modal content order.
+ *    - `HOOKS_PATTERN`: React `useState` and `useEffect` namespace discovery.
  */
 
 import { matchOnce } from "../lib/anchor.mjs";

@@ -8,7 +8,7 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 |---|---|---|---|---|---|
 | macOS (`darwin`) | `26.810.52044` | `6662` | `6e7e8791b8bf69a586ff994721fff518af391d9efdc66cd2e620dd2a4aedc90f` | 2026-08-16 | macOS official release |
 
-> **Windows:** Henüz test edilmiş bir Windows build kaydı bulunmamaktadır. Windows sürümleri test edildikçe listeye eklenecektir.
+> **Windows:** There is no tested Windows build entry yet. Windows versions will be added to the list as they are tested.
 
 ## Rules
 

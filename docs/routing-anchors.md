@@ -1,130 +1,130 @@
-# Renderer Çapa Keşfi ve Belgelenmesi (WP1 Adım B)
+# Renderer Anchor Discovery and Documentation (WP1 Step B)
 
-Bu belge, Codex++ otomatik yönlendirme ve hesap failover altyapısı (WP1) için minified renderer bundle'ı üzerindeki kilit genişleme ve müdahale noktalarının (çapaların) anlamsal analizini, AST konumlarını, ham eşleşme ölçümlerini ve 2. tur UI/patch geliştirme planını içerir.
-
----
-
-## 1. Keşif Metodolojisi ve Güvenlik Sınırları
-
-[AGENTS.md](file:///Users/ahmet/gpt-binary-patch-wt-wp1-routing/AGENTS.md) kurallarına tam uyum sağlanmıştır:
-1. **Orijinal Uygulamaya Dokunulmadı:** `/Applications/ChatGPT.app` salt okunur olarak muhafaza edilmiştir.
-2. **Geçici Çalışma Alanı:** Paketleme ve ayrıştırma araçları (`acorn`, `acorn-walk`, `prettier`, `@electron/asar`), `patch/` dizini kirlenmeden `/tmp/codexpp-anchor-discovery` altında izole olarak kurulmuştur.
-3. **Bundle Kaynağı:** `/Applications/ChatGPT.app/Contents/Resources/app.asar` içindeki `webview/assets/app-initial-BqZ9AFkF.js` (13.96 MB, tek satır) geçici dizine çıkarılmış ve AST ayrıştırması 12 saniyede tamamlanmıştır.
-4. **Anlam Odaklı Çapalar:** Minified değişken veya fonksiyon adları (`X0s`, `Z0s`, `Q0s`, `Rsn`, `Afs`) asla arama girdisi yapılmamış; React i18n id'leri, protokol sabitleri, hata metinleri ve prop imza desenleri kullanılmıştır.
+This document provides a semantic analysis, AST location mapping, raw match metrics, and Round 2 UI/patch development plan for key extension and intervention points (anchors) across the minified renderer bundle for Codex++ auto-routing and account failover infrastructure (WP1).
 
 ---
 
-## 2. Yüzey I: Engine → View Mesaj Dağıtım Noktası
+## 1. Discovery Methodology and Safety Boundaries
 
-### Rol ve Amaç
-Motor (`codex app-server`) süreçler arası JSON-RPC ile renderer'a yanıt (`result`), hata (`error`) ve bildirim (`notification`) iletir. `thread/start`, `thread/fork`, `thread/resume`, `thread/unarchive` çağrılarının yanıtlarının yakalanması; yeni oluşturulan veya devam ettirilen thread ID'sinin anlık aktif hesap ile eşleştirilmesini (`routing.json` içindeki `learnThreadOwner`) sağlar.
+Full compliance with [AGENTS.md](file:///Users/ahmet/gpt-binary-patch-wt-wp1-routing/AGENTS.md) rules has been maintained:
+1. **Original Application Untouched:** `/Applications/ChatGPT.app` is preserved strictly read-only.
+2. **Temporary Workspace:** Packaging and parsing tooling (`acorn`, `acorn-walk`, `prettier`, `@electron/asar`) was installed in isolation under `/tmp/codexpp-anchor-discovery` without polluting the `patch/` directory.
+3. **Bundle Source:** Extracted `webview/assets/app-initial-BqZ9AFkF.js` (13.96 MB, single line) from `/Applications/ChatGPT.app/Contents/Resources/app.asar` into temporary directory; AST parsing completed in 12 seconds.
+4. **Meaning-Driven Anchors:** Minified variable/function names (`X0s`, `Z0s`, `Q0s`, `Rsn`, `Afs`) are never used as search inputs; React i18n IDs, protocol constants, error strings, and prop destructuring signatures are used instead.
 
-### Çapa Adayları ve Anlamsal Gerekçeleri
+---
 
-#### Çapa 1A (Önerilen - Temel RPC Yanıt Dağıtıcısı: `RequestClient.onResult`)
-* **Anlam Gerekçesi:** RPC istek havuzunu yöneten `RequestClient` sınıfı; `mcp_request_enqueued` log sabiti ve `onResult` / `onError` metodları ile tüm sunucu yanıtlarını merkezi olarak çözümler (`resolve`/`reject`).
-* **Anchor Deseni:**
+## 2. Surface I: Engine → View Message Dispatch Point
+
+### Role and Purpose
+The engine (`codex app-server`) communicates with the renderer via inter-process JSON-RPC delivering responses (`result`), errors (`error`), and notifications (`notification`). Intercepting responses to `thread/start`, `thread/fork`, `thread/resume`, and `thread/unarchive` enables mapping the newly created or resumed thread ID to the currently active account (`learnThreadOwner` in `routing.json`).
+
+### Anchor Candidates and Semantic Rationale
+
+#### Anchor 1A (Recommended - Core RPC Response Dispatcher: `RequestClient.onResult`)
+* **Semantic Rationale:** The `RequestClient` class managing the RPC request pool centralizes resolution (`resolve`/`reject`) of all server responses via the `mcp_request_enqueued` log constant and `onResult` / `onError` methods.
+* **Anchor Pattern:**
   ```javascript
   Kp.debug(`Request completed`,{safe:{id:e,method:r.method
   ```
-* **AST Aralığı:** `[2443803, 2455808]` (RequestClient sınıfı bütünü); `onResult`: `[2444983, 2446100]`
-* **Ham Eşleşme Sayısı (`grep -c`):** `1`
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/AppServerRequestClient.js`
-* **Önerilen Enjeksiyon Noktası:** `onResult(e, t, n)` metodunda `r.resolve(t)` öncesi: `r.method` (`thread/start`, `thread/fork`, `thread/resume`, `thread/unarchive`) kontrol edilerek `t.thread?.id` varsa `globalThis.__codexpp?.learnThreadOwner(t.thread.id, activeAccountId)` çağrısı eklenir.
+* **AST Range:** `[2443803, 2455808]` (entire RequestClient class); `onResult`: `[2444983, 2446100]`
+* **Raw Match Count (`grep -c`):** `1`
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/AppServerRequestClient.js`
+* **Proposed Injection Point:** In `onResult(e, t, n)` prior to `r.resolve(t)`: check `r.method` (`thread/start`, `thread/fork`, `thread/resume`, `thread/unarchive`), and if `t.thread?.id` exists, invoke `globalThis.__codexpp?.learnThreadOwner(t.thread.id, activeAccountId)`.
 
-#### Çapa 1B (Alternatif - Server → Client Request Dağıtıcısı: Patch 010 Komşuluğu)
-* **Anlam Gerekçesi:** Patch 010'un (`010-external-auth-refresh.mjs`) kullandığı `onRequest` hook'u.
-* **Anchor Deseni:**
+#### Anchor 1B (Alternative - Server → Client Request Dispatcher: Adjacent to Patch 010)
+* **Semantic Rationale:** The `onRequest` hook utilized by Patch 010 (`010-external-auth-refresh.mjs`).
+* **Anchor Pattern:**
   ```javascript
   case`currentTime/read`:this.dispatchMessageFromView(`mcp-response`,{hostId:this.hostId,response:{id:
   ```
-* **AST Aralığı:** `[3214623, 3218507]`
-* **Ham Eşleşme Sayısı (`grep -c`):** `1` (tekil switch-case bloğu olarak)
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/method-onRequest.js`
+* **AST Range:** `[3214623, 3218507]`
+* **Raw Match Count (`grep -c`):** `1` (as a unique switch-case block)
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/method-onRequest.js`
 
-### Risk Notları
-* `onResult` seviyesinde enjeksiyon en güvenli yoldur çünkü tüm taşıma katmanlarının (IPC, Worker, WebSocket) üzerindedir ve `r.method` doğrudan enum değerini korur.
+### Risk Notes
+* Injection at the `onResult` level is safest as it sits above all transport layers (IPC, Worker, WebSocket) and `r.method` directly preserves the enum value.
 
 ---
 
-## 3. Yüzey II: Turn Hata Yüzeyi (Rate Limit / Quota / Plan Upgrade Banner'ları)
+## 3. Surface II: Turn Error / Rate Limit / Quota Banner Surface
 
-### Rol ve Amaç
-Model veya hesap kotası dolduğunda, rate limit aşıldığında veya plan yetersizliği nedeniyle turn reddedildiğinde renderer'ın çizdiği uyarı banner'ları yakalanarak kullanıcının anında otomatik rota veya failover hesaba geçirilmesi sağlanır.
+### Role and Purpose
+When a model or account quota is exhausted, rate limit is reached, or turn is rejected due to plan limitations, warning banners rendered by the renderer are intercepted to allow instant auto-routing or failover to an alternative eligible account.
 
-### Hata Sabiti Keşif Taraması
-Bundle üzerinde yapılan anahtar kelime taramasında tespit edilen sabitler:
+### Error Constant Discovery Scan
+Constants identified across the bundle via keyword scanning:
 * `codex.modelLimitBanner.headline.noReset`: `"You've hit your usage limit for {modelName}. Try again later, or start a new conversation with another model."`
 * `codex.modelLimitBanner.headline.withReset`: `"You've hit your usage limit for {modelName}. Try again after {resetDate}, or start a new conversation with another model."`
 * `codex.upsellBanner.plus.headline.noReset`: `"To continue using Codex, add credits or upgrade to Pro today."`
 * `codex.upsellBanner.freeOrGo.headline`: `"Your rate limit resets on {resetDate}. To continue using Codex, upgrade to Plus today."`
 * `codex.upsellBanner.workspaceUsage.ownerLimitReached.headline`: `"You've reached your usage limit. Increase your limits to continue using Codex"`
 
-### Çapa Adayları ve Anlamsal Gerekçeleri
+### Anchor Candidates and Semantic Rationale
 
-#### Çapa 2A (Model Spesifik Kullanım Limiti Banner'ı: `Q0s`)
-* **Anlam Gerekçesi:** Seçilen model için kullanım limiti aşıldığında render edilen React bileşeni. i18n React key'leri ve string tanımları benzersizdir.
-* **Anchor Deseni:**
+#### Anchor 2A (Model-Specific Usage Limit Banner: `Q0s`)
+* **Semantic Rationale:** React component rendered when usage limits are exceeded for a selected model. i18n React keys and string definitions are unique.
+* **Anchor Pattern:**
   ```javascript
   id:`codex.modelLimitBanner.headline.noReset`
   ```
-* **AST Aralığı:** `[10453689, 10455506]` (1,817 bayt)
-* **Ham Eşleşme Sayısı (`grep -c`):** `1`
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/component-error-10454637.js`
-* **Önerilen Enjeksiyon Noktası:** Banner JSX render çıktısına alternatif olarak "Başka bir uygun hesaba yönlendir" aksiyon butonu eklenmesi.
+* **AST Range:** `[10453689, 10455506]` (1,817 bytes)
+* **Raw Match Count (`grep -c`):** `1`
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/component-error-10454637.js`
+* **Proposed Injection Point:** Add "Switch to another eligible account" action button alongside banner JSX output.
 
-#### Çapa 2B (Hesap/Workspace Rate Limit ve Upsell Banner'ı: `Z0s`)
-* **Anlam Gerekçesi:** Hesabın genel rate limiti, kredi bitişi veya plan kısıtlamalarında (Free, Go, Plus, Pro, Enterprise CBP) gösterilen banner bileşeni.
-* **Anchor Deseni:**
+#### Anchor 2B (Account/Workspace Rate Limit & Upsell Banner: `Z0s`)
+* **Semantic Rationale:** Banner component displayed on account rate limits, exhausted credits, or plan limits (Free, Go, Plus, Pro, Enterprise CBP).
+* **Anchor Pattern:**
   ```javascript
   id:`codex.upsellBanner.plus.headline.noReset`
   ```
-* **AST Aralığı:** `[10426435, 10453689]` (27,254 bayt)
-* **Ham Eşleşme Sayısı (`grep -c`):** `1`
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/component-error-10443234.js`
-* **Önerilen Enjeksiyon Noktası:** Rate limit tetiklendiğinde `globalThis.__codexpp?.markIneligible(currentAccountId, 'rate_limited')` hook'unun çağrılması.
+* **AST Range:** `[10426435, 10453689]` (27,254 bytes)
+* **Raw Match Count (`grep -c`):** `1`
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/component-error-10443234.js`
+* **Proposed Injection Point:** When rate limit triggers, invoke `globalThis.__codexpp?.markIneligible(currentAccountId, 'rate_limited')`.
 
-### Risk Notları
-* React Compiler memo slotları (`t[N]`) nedeniyle JSX dönüşünden önce hook veya state eklerken React dispatcher kurallarına dikkat edilmelidir.
+### Risk Notes
+* Due to React Compiler memo slots (`t[N]`), hook/state injections prior to JSX return must strictly adhere to React dispatcher rules.
 
 ---
 
-## 4. Yüzey III: Yeni Sohbet Oluşturma Çağrı Noktası (Thread/Start UI Yolu)
+## 4. Surface III: New Chat UI Creation Path (Thread/Start)
 
-### Rol ve Amaç
-Kullanıcı yeni bir konuşma başlattığında (`thread/start`), isteğin gönderilmesinden hemen önce otomatik yönlendirme politikasının devreye girip en uygun hesabı (`chooseAccount`) seçmesi ve aktif hesabı gerekiyorsa sessizce/hızla değiştirmesi gerekir.
+### Role and Purpose
+When the user starts a new conversation (`thread/start`), auto-routing policy must evaluate the most eligible account (`chooseAccount`) and switch the active account swiftly/silently before the creation request is dispatched.
 
-### Çapa Adayları ve Anlamsal Gerekçeleri
+### Anchor Candidates and Semantic Rationale
 
-#### Çapa 3A (Önerilen - UI Yeni Sohbet Aksiyon Yolu: `CKc`)
-* **Anlam Gerekçesi:** Kullanıcı komut paletinden veya yeni sohbet butonundan proje içi/projesiz sohbet başlattığında çağrılan fonksiyon. `new_thread` telemetri sabiti ile eşleşir.
-* **Anchor Deseni:**
+#### Anchor 3A (Recommended - UI New Chat Action Path: `CKc`)
+* **Semantic Rationale:** Function called when the user initiates a conversation with or without a project from the command palette or new chat button. Matches `new_thread` telemetry constant.
+* **Anchor Pattern:**
   ```javascript
   Lh(e,Xg,{item:`new_thread`});
   ```
-* **AST Aralığı:** `[12112423, 12113059]` (636 bayt)
-* **Ham Eşleşme Sayısı (`grep -c`):** `1`
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/function-CKc-newchat.js`
-* **Önerilen Enjeksiyon Noktası:** `CKc` fonksiyonu başında `autoRoute` aktifse `globalThis.__cxpAutoRoute?.()` çağrısı yapılarak en yüksek urgency puanına sahip hesap aktif edilir.
+* **AST Range:** `[12112423, 12113059]` (636 bytes)
+* **Raw Match Count (`grep -c`):** `1`
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/function-CKc-newchat.js`
+* **Proposed Injection Point:** At the start of `CKc`, if `autoRoute` is active, invoke `globalThis.__cxpAutoRoute?.()` to activate the account with the highest urgency score.
 
-#### Çapa 3B (Alternatif - Komut Paleti Başlatıcısı)
-* **Anlam Gerekçesi:** `CmdOrCtrl+N` / `CmdOrCtrl+Shift+O` kısayollarının ve menü girişlerinin bağlandığı komut tanımı.
-* **Anchor Deseni:**
+#### Anchor 3B (Alternative - Command Palette Launcher)
+* **Semantic Rationale:** Command definition mapped to `CmdOrCtrl+N` / `CmdOrCtrl+Shift+O` shortcuts and menu entries.
+* **Anchor Pattern:**
   ```javascript
   id:`codex.command.newThread`
   ```
-* **AST Aralığı:** `[3981577, 3982000]`
-* **Ham Eşleşme Sayısı (`grep -c`):** `1`
-* **Biçimlendirilmiş Parçacık Yolu:** `/tmp/codexpp-anchor-discovery/startConv-ref-1.js`
+* **AST Range:** `[3981577, 3982000]`
+* **Raw Match Count (`grep -c`):** `1`
+* **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/startConv-ref-1.js`
 
-### Risk Notları
-* Yeni sohbet oluşturma akışında enjeksiyon için `CKc` fonksiyonu hem UI butonlarından hem kısayollardan tetiklenen yeni konuşmaların ortak boğaz noktasıdır.
+### Risk Notes
+* The `CKc` function serves as the unified bottleneck for new conversations triggered from both UI buttons and keyboard shortcuts.
 
 ---
 
-## 5. Ham Doğrulama Kanıtları (`grep -c` Çıktıları)
+## 5. Raw Verification Evidence (grep -c Outputs)
 
-Aşağıdaki komutlar ayıklanan `app-initial-*.js` bundle dosyası üzerinde çalıştırılmış ve her bir çapanın tekil (tam olarak 1 eşleşme) olduğu doğrulanmıştır:
+The following commands were run against the extracted `app-initial-*.js` bundle file, verifying that each anchor matches uniquely (exactly 1 match):
 
 ```bash
 $ grep -c "case\`currentTime/read\`:this.dispatchMessageFromView(\`mcp-response\`" /tmp/codexpp-anchor-discovery/app-initial-BqZ9AFkF.js
@@ -145,12 +145,12 @@ $ grep -c "id:\`codex.command.newThread\`" /tmp/codexpp-anchor-discovery/app-ini
 
 ---
 
-## 6. Çapa Keşif Özeti ve 2. Tur Enjeksiyon Planı
+## 6. Anchor Discovery Summary and Round 2 Injection Plan
 
-| Yüzey | Seçilen Çapa | Çapa Türü | Regex / String Eşleşme | AST Aralığı | 2. Tur Aksiyonu |
+| Surface | Selected Anchor | Anchor Type | Regex / String Match | AST Range | Round 2 Action |
 |---|---|---|---|---|---|
-| **Yüzey I: Dağıtıcı** | `RequestClient.onResult` / `currentTime/read` | Protokol Log / Metod İmzası | `currentTime/read` (1) | `[2444983, 2446100]` & `[3214623, 3218507]` | `learnThreadOwner` otomatik kaydı |
-| **Yüzey II: Hata** | `codex.modelLimitBanner.headline.noReset` & `codex.upsellBanner.plus...` | React i18n ID / Hata Metni | `codex.modelLimitBanner...` (1) | `[10453689, 10455506]` & `[10426435, 10453689]` | `markIneligible` ve UI failover önerisi |
-| **Yüzey III: Yeni Sohbet** | `{item:`new_thread`}` / `CKc` | Telemetri & UI Eylem İmzası | `new_thread` (1) | `[12112423, 12113059]` | `chooseAccount` ile otomatik yönlendirme |
+| **Surface I: Dispatcher** | `RequestClient.onResult` / `currentTime/read` | Protocol Log / Method Signature | `currentTime/read` (1) | `[2444983, 2446100]` & `[3214623, 3218507]` | Auto-record via `learnThreadOwner` |
+| **Surface II: Turn Error** | `codex.modelLimitBanner.headline.noReset` & `codex.upsellBanner.plus...` | React i18n ID / Error String | `codex.modelLimitBanner...` (1) | `[10453689, 10455506]` & `[10426435, 10453689]` | `markIneligible` and UI failover recommendation |
+| **Surface III: New Chat** | `{item:`new_thread`}` / `CKc` | Telemetry & UI Action Signature | `new_thread` (1) | `[12112423, 12113059]` | Auto-routing with `chooseAccount` |
 
-Tüm keşif parçacıkları `/tmp/codexpp-anchor-discovery/` altında doğrulanmış ve 2. tur patch yazımı için hazır hale getirilmiştir.
+All discovery slices were verified under `/tmp/codexpp-anchor-discovery/` and prepared for Round 2 patch development.

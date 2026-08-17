@@ -186,7 +186,7 @@ Patch 020 sets `CODEX_SPARKLE_ENABLED=false` in the main process on every
 platform. That one flag gates all three updaters — Sparkle on macOS, the
 Microsoft Store updater and the MSIX fallback on Windows. On Windows the flag
 matters even more than on macOS: the copy runs without MSIX package identity,
-so the store updater would throw `İşlemde paket kimliği yok` on every launch
+so the store updater would throw `The process has no package identity` on every launch
 and the copy could never update itself anyway. On both platforms: re-run the
 installer after the original app updates.
 
