@@ -17,13 +17,13 @@ function assertEqual(label, actual, expected) {
   if (match) {
     totalPassed++;
     console.log(`  [PASS] ${label}`);
-    console.log(`         Beklenen : ${formatVal(expected)}`);
-    console.log(`         Gercek   : ${formatVal(actual)}`);
+    console.log(`         Expected : ${formatVal(expected)}`);
+    console.log(`         Actual   : ${formatVal(actual)}`);
   } else {
     totalFailed++;
     console.log(`  [FAIL] ${label}`);
-    console.log(`         Beklenen : ${formatVal(expected)}`);
-    console.log(`         Gercek   : ${formatVal(actual)}`);
+    console.log(`         Expected : ${formatVal(expected)}`);
+    console.log(`         Actual   : ${formatVal(actual)}`);
   }
 }
 
@@ -33,13 +33,13 @@ function assertClose(label, actual, expected, tol = 1e-9) {
   if (match) {
     totalPassed++;
     console.log(`  [PASS] ${label}`);
-    console.log(`         Beklenen : ${expected.toFixed(8)}`);
-    console.log(`         Gercek   : ${actual.toFixed(8)} (fark: ${Math.abs(actual - expected).toExponential(2)})`);
+    console.log(`         Expected : ${expected.toFixed(8)}`);
+    console.log(`         Actual   : ${actual.toFixed(8)} (diff: ${Math.abs(actual - expected).toExponential(2)})`);
   } else {
     totalFailed++;
     console.log(`  [FAIL] ${label}`);
-    console.log(`         Beklenen : ${formatVal(expected)}`);
-    console.log(`         Gercek   : ${formatVal(actual)}`);
+    console.log(`         Expected : ${formatVal(expected)}`);
+    console.log(`         Actual   : ${formatVal(actual)}`);
   }
 }
 
@@ -62,13 +62,13 @@ function assertDeepEqual(label, actual, expected) {
   if (match) {
     totalPassed++;
     console.log(`  [PASS] ${label}`);
-    console.log(`         Beklenen : ${expectedStr}`);
-    console.log(`         Gercek   : ${actualStr}`);
+    console.log(`         Expected : ${expectedStr}`);
+    console.log(`         Actual   : ${actualStr}`);
   } else {
     totalFailed++;
     console.log(`  [FAIL] ${label}`);
-    console.log(`         Beklenen : ${expectedStr}`);
-    console.log(`         Gercek   : ${actualStr}`);
+    console.log(`         Expected : ${expectedStr}`);
+    console.log(`         Actual   : ${actualStr}`);
   }
 }
 
@@ -103,7 +103,7 @@ const now = 1700000000000;
 // ---------------------------------------------------------------------------
 // (a) Tumu usedPercent >= 100
 // ---------------------------------------------------------------------------
-console.log("\n--- (a): Tümü usedPercent >= 100 ---");
+console.log("\n--- (a): All usedPercent >= 100 ---");
 
 const accsA = [
   { id: "acc-1", label: "Pro Account", usedPercent: 100, resetAt: now + 3600 * 1000 },
@@ -121,9 +121,9 @@ assertEqual("(a) row 0 label is preserved", resA.rows[0].label, "Pro Account");
 assertEqual("(a) row 0 usedPercent", resA.rows[0].usedPercent, 100);
 
 // ---------------------------------------------------------------------------
-// (b) Bir hesap usedPercent null
+// (b) One account usedPercent null
 // ---------------------------------------------------------------------------
-console.log("\n--- (b): Bir Hesap usedPercent null ---");
+console.log("\n--- (b): One Account with usedPercent null ---");
 
 const accsB = [
   { id: "acc-1", label: "Unknown Usage", usedPercent: null, resetAt: now + 600 * 1000 },
@@ -141,7 +141,7 @@ assertEqual("(b) row 0 usedPercent is null", resB.rows[0].usedPercent, null);
 // ---------------------------------------------------------------------------
 // (c) Hepsi null
 // ---------------------------------------------------------------------------
-console.log("\n--- (c): Hepsi null ---");
+console.log("\n--- (c): All null ---");
 
 const accsC = [
   { id: "acc-1", email: "user1@example.com", usedPercent: null, resetAt: null },
@@ -159,7 +159,7 @@ assertEqual("(c) label falls back to email", resC.rows[0].label, "user1@example.
 // ---------------------------------------------------------------------------
 // (d) Bos dizi
 // ---------------------------------------------------------------------------
-console.log("\n--- (d): Boş Dizi ---");
+console.log("\n--- (d): Empty Array ---");
 
 const accsD = [];
 const resD = poolStats(accsD, now);
@@ -172,7 +172,7 @@ assertEqual("(d) earliestResetAt is null", resD.earliestResetAt, null);
 // ---------------------------------------------------------------------------
 // (e) Negatif: resetAt string / boolean
 // ---------------------------------------------------------------------------
-console.log("\n--- (e): Negatif resetAt string/boolean ---");
+console.log("\n--- (e): Negative resetAt string/boolean ---");
 
 const accsE = [
   { id: "acc-1", label: "Str Date", usedPercent: 50, resetAt: "2026-08-17T14:00:00Z" },
@@ -189,7 +189,7 @@ assertEqual("(e) earliestResetAt ignores string/boolean and takes numeric minimu
 // ---------------------------------------------------------------------------
 // Ekstra: Label Resolution Hierarchy & Non-array input
 // ---------------------------------------------------------------------------
-console.log("\n--- Ekstra: Label Hiyerarşisi ve Koruma Testleri ---");
+console.log("\n--- Extra: Label Hierarchy and Fallback Tests ---");
 
 const accsExtra = [
   { id: "id-1", label: "Custom Name", email: "custom@example.com" },
@@ -198,19 +198,19 @@ const accsExtra = [
 ];
 
 const resExtra = poolStats(accsExtra, now);
-assertEqual("Ekstra 1: label varsa label kullanilir", resExtra.rows[0].label, "Custom Name");
-assertEqual("Ekstra 2: label yoksa email kullanilir", resExtra.rows[1].label, "onlyemail@example.com");
-assertEqual("Ekstra 3: label ve email yoksa id kullanilir", resExtra.rows[2].label, "id-3");
+assertEqual("Extra 1: uses label when present", resExtra.rows[0].label, "Custom Name");
+assertEqual("Extra 2: falls back to email when label absent", resExtra.rows[1].label, "onlyemail@example.com");
+assertEqual("Extra 3: falls back to id when label and email absent", resExtra.rows[2].label, "id-3");
 
 const resNull = poolStats(null, now);
-assertDeepEqual("Ekstra 4: null accounts durumunda guvenli fallback", resNull.rows, []);
+assertDeepEqual("Extra 4: safe fallback for null accounts", resNull.rows, []);
 
 // ---------------------------------------------------------------------------
 // OZET RAPOR
 // ---------------------------------------------------------------------------
 console.log("\n===============================================================");
-console.log(`TEST SONUCU: Toplam: ${totalTests}, Gecen: ${totalPassed}, Basarisiz: ${totalFailed}`);
-console.log(`TOPLAM UYUMSUZLUK (Mismatches): ${totalFailed}`);
+console.log(`TEST RESULT: Total: ${totalTests}, Passed: ${totalPassed}, Failed: ${totalFailed}`);
+console.log(`TOTAL MISMATCHES: ${totalFailed}`);
 console.log("===============================================================");
 
 if (totalFailed > 0) {

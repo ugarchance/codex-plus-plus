@@ -31,7 +31,7 @@ function read() {
   return {
     id: NATIVE_ID,
     native: true,
-    label: identity.name ?? identity.email ?? "Ana hesap",
+    label: identity.name ?? identity.email ?? "Primary account",
     email: identity.email ?? null,
     avatarUrl: identity.picture ?? null,
     accountId: claims.chatgpt_account_id ?? auth.tokens.account_id ?? null,

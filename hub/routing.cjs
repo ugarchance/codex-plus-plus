@@ -21,10 +21,10 @@ const CODEX_ELIGIBLE_PLANS = Object.freeze([
 
 const BLOCKED_PLANS = Object.freeze(["free", "go"]);
 
-const KREDI_CARPI = 0.15;
-const KREDI_TAVANI = 3;
-const UFUK_VARSAYILAN = 7 * 24 * 60 * 60 * 1000; // 7 days in ms (168 hours)
-const UFUK_MIN = 60 * 1000; // 1 minute in ms
+const CREDIT_BOOST_FACTOR = 0.15;
+const CREDIT_BOOST_CAP = 3;
+const RESET_HORIZON_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms (168 hours)
+const RESET_HORIZON_MIN_MS = 60 * 1000; // 1 minute in ms
 
 function isLearnedIneligible(learned, id) {
   if (!learned || !id) return false;
@@ -75,16 +75,16 @@ function urgencyScore(window, credits = 0, now = Date.now()) {
   let clampedMs;
   const rawReset = window.resetsAt ?? window.resetAt;
   if (rawReset !== null && rawReset !== undefined) {
-    const resetMs = typeof rawReset === "number" ? (rawReset > 1e11 ? rawReset : rawReset * 1000) : now + UFUK_VARSAYILAN;
+    const resetMs = typeof rawReset === "number" ? (rawReset > 1e11 ? rawReset : rawReset * 1000) : now + RESET_HORIZON_DEFAULT_MS;
     const deltaMs = resetMs - now;
-    clampedMs = Math.max(deltaMs, UFUK_MIN);
+    clampedMs = Math.max(deltaMs, RESET_HORIZON_MIN_MS);
   } else {
-    clampedMs = UFUK_VARSAYILAN;
+    clampedMs = RESET_HORIZON_DEFAULT_MS;
   }
 
   const hoursUntilReset = clampedMs / (1000 * 60 * 60);
   const effectiveCredits = typeof credits === "number" && !Number.isNaN(credits) ? Math.max(0, credits) : 0;
-  const creditMultiplier = 1 + KREDI_CARPI * Math.min(effectiveCredits, KREDI_TAVANI);
+  const creditMultiplier = 1 + CREDIT_BOOST_FACTOR * Math.min(effectiveCredits, CREDIT_BOOST_CAP);
 
   return (remainingPercent / hoursUntilReset) * creditMultiplier;
 }
@@ -267,10 +267,10 @@ function clearIneligible(accountId) {
 module.exports = {
   CODEX_ELIGIBLE_PLANS,
   BLOCKED_PLANS,
-  KREDI_CARPI,
-  KREDI_TAVANI,
-  UFUK_VARSAYILAN,
-  UFUK_MIN,
+  CREDIT_BOOST_FACTOR,
+  CREDIT_BOOST_CAP,
+  RESET_HORIZON_DEFAULT_MS,
+  RESET_HORIZON_MIN_MS,
   isEligible,
   urgencyScore,
   chooseAccount,

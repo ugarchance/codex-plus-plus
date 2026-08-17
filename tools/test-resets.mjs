@@ -11,7 +11,7 @@ const store = require(path.join(repoDir, "hub/store.cjs"));
 const resets = require(path.join(repoDir, "hub/resets.cjs"));
 
 async function runTests() {
-  console.log("=== T2: hub/resets.cjs Cache Testi ===");
+  console.log("=== T2: hub/resets.cjs Cache Test ===");
   
   const accounts = store.accounts();
   const testAccount = accounts[0];
@@ -61,7 +61,7 @@ async function runTests() {
   }
   console.log("-> TTL expiration/cache reset verified (2nd network call made)\n");
 
-  console.log("=== T3: Negatif Testler ===");
+  console.log("=== T3: Negative Tests ===");
 
   // 1. consume without redeemRequestId
   try {

@@ -15,7 +15,7 @@ import patch100 from "../patch/patches/100-resets-bridge.mjs";
 import patch101 from "../patch/patches/101-usage-modal.mjs";
 
 async function runTest() {
-  console.log("=== T4: Patch Fonksiyon Testi ===");
+  console.log("=== T4: Patch Function Test ===");
   const asarPath = "/Applications/ChatGPT.app/Contents/Resources/app.asar";
   if (!fs.existsSync(asarPath)) {
     throw new Error(`Asar not found at ${asarPath}`);
