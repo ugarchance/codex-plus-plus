@@ -157,9 +157,9 @@ function block({ jsx, menu, item, react }) {
     `(0,${jsx}.jsx)(${ROW},{account:_a,index:_i,active:_a.id===_view?.activeAccountId,routing:_routing,`,
     "onPick:()=>_pick(_a.id),onSignOut:()=>_signOut(_a.id)},`cxp-account-`+_a.id));",
 
-    "const _known=_accounts.map(_a=>_cxpLeft(_a.usedPercent)).filter(_v=>_v!=null);",
+    "const _known=_accounts.map(_a=>({w:typeof _a.planWeight===`number`&&_a.planWeight>0?_a.planWeight:1,left:_cxpLeft(_a.usedPercent)})).filter(_e=>_e.left!=null);",
     "const _total=_known.length===_accounts.length",
-    `?(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:\`\${_known.reduce((_s,_v)=>_s+_v,0)}%\`}):null;`,
+    `?(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:\`\${Math.round(_known.reduce((_s,_e)=>_s+_e.w*_e.left,0)/_known.reduce((_s,_e)=>_s+_e.w,0))}%\`}):null;`,
     "const _summary=_accounts.length>1",
     `?(0,${jsx}.jsx)(${item},{disabled:!0,LeftIcon:${GAUGE},`,
     "SubText:`${_accounts.length} connected subscriptions`,rightIcon:_total,",

@@ -3,6 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const native = require("./native.cjs");
+const { weightFor } = require("./weights.cjs");
 
 function defaultDataDir() {
   if (process.platform === "win32") {
@@ -135,6 +136,8 @@ function publicView() {
       label: a.label ?? null,
       email: a.email ?? null,
       planType: a.planType ?? null,
+      planWeight: weightFor(a.planType),
+      windowMins: a.windowMins ?? null,
       accountId: a.accountId ?? null,
       avatarUrl: a.avatarUrl ?? null,
       usedPercent: a.usedPercent ?? null,

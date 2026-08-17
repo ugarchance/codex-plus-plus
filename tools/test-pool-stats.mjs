@@ -207,6 +207,53 @@ const resNull = poolStats(null, now);
 assertDeepEqual("Extra 4: safe fallback for null accounts", resNull.rows, []);
 
 // ---------------------------------------------------------------------------
+// (f) Agirlikli havuz kapasite hesaplari
+// ---------------------------------------------------------------------------
+console.log("\n--- (f): Weighted Pool Capacity Calculations ---");
+
+const accsF1 = [
+  { id: "pro-1", planWeight: 200, usedPercent: 100, windowMins: 10080 },
+  { id: "free-1", planWeight: 1, usedPercent: 0, windowMins: 43200 }
+];
+const resF1 = poolStats(accsF1, now);
+assertClose("(f) pro w200 used100 + free w1 used0 avgRemainingPct", resF1.avgRemainingPct, (200 * 0 + 1 * 100) / 201);
+assertEqual("(f) pro w200 used100 + free w1 used0 Math.round is 0", Math.round(resF1.avgRemainingPct), 0);
+assertEqual("(f) pro row weight is 200", resF1.rows[0].weight, 200);
+assertEqual("(f) pro row windowMins is 10080", resF1.rows[0].windowMins, 10080);
+assertEqual("(f) free row weight is 1", resF1.rows[1].weight, 1);
+assertEqual("(f) free row windowMins is 43200", resF1.rows[1].windowMins, 43200);
+
+const accsF2 = [
+  { id: "plus-1", planWeight: 10, usedPercent: 40 },
+  { id: "free-2", planWeight: 1, usedPercent: 80 }
+];
+const resF2 = poolStats(accsF2, now);
+assertClose("(f) plus w10 used40 + free w1 used80 avgRemainingPct", resF2.avgRemainingPct, (10 * 60 + 1 * 20) / 11);
+assertEqual("(f) plus w10 used40 + free w1 used80 Math.round is 56", Math.round(resF2.avgRemainingPct), 56);
+
+const accsF3 = [
+  { id: "w3-acc", planWeight: 3, usedPercent: 50 },
+  { id: "w1-acc", planWeight: 1, usedPercent: 100 }
+];
+const resF3 = poolStats(accsF3, now);
+assertClose("(f) w3 used50 + w1 used100 avgRemainingPct is 37.5", resF3.avgRemainingPct, 37.5);
+
+const accsF4 = [
+  { id: "null-w", planWeight: null, usedPercent: 40 },
+  { id: "missing-w", usedPercent: 40 },
+  { id: "zero-w", planWeight: 0, usedPercent: 40 },
+  { id: "neg-w", planWeight: -5, usedPercent: 40 },
+  { id: "str-w", planWeight: "10", usedPercent: 40 }
+];
+const resF4 = poolStats(accsF4, now);
+assertEqual("(f) planWeight null falls back to 1", resF4.rows[0].weight, 1);
+assertEqual("(f) planWeight undefined falls back to 1", resF4.rows[1].weight, 1);
+assertEqual("(f) planWeight 0 falls back to 1", resF4.rows[2].weight, 1);
+assertEqual("(f) planWeight negative falls back to 1", resF4.rows[3].weight, 1);
+assertEqual("(f) planWeight string falls back to 1", resF4.rows[4].weight, 1);
+assertClose("(f) fallback accounts avgRemainingPct is 60", resF4.avgRemainingPct, 60);
+
+// ---------------------------------------------------------------------------
 // (m) _cxpPoolMessage title/subtitle selection (review P2 fix)
 // ---------------------------------------------------------------------------
 console.log("\n--- (m): Pool message selection ---");

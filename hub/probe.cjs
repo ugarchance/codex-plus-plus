@@ -113,6 +113,7 @@ async function readUsage(credentials) {
           planType: account?.account?.planType ?? entry.planType ?? null,
           usedPercent: typeof primary?.usedPercent === "number" ? primary.usedPercent : null,
           resetAt: typeof primary?.resetsAt === "number" ? primary.resetsAt * 1000 : null,
+          windowMins: typeof primary?.windowDurationMins === "number" ? primary.windowDurationMins : null,
           usageAt: Date.now()
         });
       } catch (err) {

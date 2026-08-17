@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Weighted pool capacity calculation**: Replaced unweighted sum and simple averages with plan-capacity-weighted calculations across connected accounts. Subscriptions are weighted proportionally according to official tier capacity ratios (Pro at 200x, Pro Lite at 50x, Plus/Team/Enterprise/Business/Edu at 10x, Free/Go at 1x baseline).
+- Added `hub/weights.cjs` as single source of truth for plan weights.
+- Extended `hub/probe.cjs` and `hub/store.cjs` `publicView()` to supply `planWeight` and `windowMins`.
+- Updated profile menu (`040-account-menu`) and failover banner (`091-rate-limit-failover`) to calculate weighted remaining headroom.
+
 ### Added
 
 - Multi-account support for ChatGPT subscriptions in the Codex desktop app.
