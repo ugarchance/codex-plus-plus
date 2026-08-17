@@ -1,0 +1,12 @@
+{
+  "testedBuilds": [
+    {
+      "platform": "darwin",
+      "version": "26.810.52044",
+      "build": "6662",
+      "asarSha256": "6e7e8791b8bf69a586ff994721fff518af391d9efdc66cd2e620dd2a4aedc90f",
+      "testedAt": "2026-08-16",
+      "notes": "macOS official release"
+    }
+  ]
+}

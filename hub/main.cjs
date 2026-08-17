@@ -4,6 +4,8 @@ const tokens = require("./tokens.cjs");
 const login = require("./login.cjs");
 const usage = require("./usage.cjs");
 const accounts = require("./accounts.cjs");
+const profile = require("./profile.cjs");
+const routing = require("./routing.cjs");
 
 function guard(label, handler) {
   return async (...args) => {
@@ -71,7 +73,154 @@ ipcMain.handle("codexpp:add-account", async (_event, label) => {
   }
 });
 
+const PROFILE_ENDPOINT = "https://chatgpt.com/backend-api/wham/profiles/me";
+const PROFILE_STALE_MS = 60_000;
+let cachedProfile = null;
+let profileCacheAt = 0;
+
+async function fetchCombinedProfile(force = false) {
+  if (!force && cachedProfile && Date.now() - profileCacheAt < PROFILE_STALE_MS) {
+    return cachedProfile;
+  }
+
+  const accountList = store.accounts();
+  if (accountList.length === 0) {
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+
+  const collected = [];
+  let hasFailed = false;
+
+  for (const acc of accountList) {
+    try {
+      const accessToken = await tokens.accessTokenFor(acc);
+      if (!accessToken || !acc.accountId) {
+        hasFailed = true;
+        continue;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+        "ChatGPT-Account-ID": acc.accountId,
+        "User-Agent": "Codex Subscription Router",
+        Accept: "application/json"
+      };
+
+      const res = await fetch(PROFILE_ENDPOINT, { method: "GET", headers });
+      if (!res.ok) {
+        hasFailed = true;
+        continue;
+      }
+
+      const data = await res.json();
+      if (data && data.profile && data.stats) {
+        collected.push(data);
+      } else {
+        hasFailed = true;
+      }
+    } catch (err) {
+      console.error(`==> codexpp profile fetch failed for ${acc.id}:`, err.message);
+      hasFailed = true;
+    }
+  }
+
+  if (collected.length === 0) {
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+
+  const merged = profile.mergeProfiles(collected, { partial: hasFailed });
+  cachedProfile = merged;
+  profileCacheAt = Date.now();
+  return merged;
+}
+
+ipcMain.handle("codexpp:combined-profile", async (_event, force) => {
+  try {
+    return await fetchCombinedProfile(force === true);
+  } catch (err) {
+    console.error("==> codexpp combined profile failed:", err.message);
+    return { partial: true, accounts: store.publicView().accounts };
+  }
+});
+
+ipcMain.on("codexpp:routing-view", (event) => {
+  try {
+    const data = routing.read();
+    event.returnValue = {
+      version: data.version ?? 1,
+      threadOwner: data.threadOwner ?? {},
+      learnedIneligible: data.learnedIneligible ?? {},
+      autoRoute: data.autoRoute !== false,
+      activeAccountId: store.activeAccountId()
+    };
+  } catch (err) {
+    console.error("==> codexpp routing-view error:", err.message);
+    event.returnValue = { version: 1, threadOwner: {}, learnedIneligible: {}, autoRoute: true, activeAccountId: null };
+  }
+});
+
+ipcMain.handle("codexpp:routing-set-auto", (_event, enabled) => {
+  return routing.setAutoRoute(enabled);
+});
+
+ipcMain.handle("codexpp:routing-learn-owner", (_event, threadId, accountId) => {
+  return routing.learnThreadOwner(threadId, accountId);
+});
+
+ipcMain.handle("codexpp:routing-suggest", async (_event, excluded) => {
+  try {
+    const list = store.accounts();
+    const learned = routing.read().learnedIneligible;
+    return routing.chooseAccount(list, excluded, learned);
+  } catch (err) {
+    console.error("==> codexpp routing-suggest error:", err.message);
+    return null;
+  }
+});
+
+ipcMain.handle("codexpp:routing-mark-ineligible", (_event, accountId, reason) => {
+  return routing.markIneligible(accountId, reason);
+});
+
+ipcMain.handle("codexpp:routing-clear-ineligible", (_event, accountId) => {
+  return routing.clearIneligible(accountId);
+});
+
 store.setActive(null);
 usage.refreshAll({ force: true }).catch(() => {});
 
 console.log("==> codexpp hub started");
+
+ipcMain.handle("codexpp:add-account-device-code", async (_event, label, timeoutMs) => {
+  try {
+    await login.addAccountDeviceCode(label, timeoutMs);
+    await usage.refreshAll({ force: true });
+    return { ok: true, view: store.publicView() };
+  } catch (err) {
+    console.error("==> codexpp could not add account (device code):", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+
+const resets = require("./resets.cjs");
+
+ipcMain.handle("codexpp:reset-credits", async (_event, accountId, force) => {
+  try {
+    const data = await resets.creditsFor(accountId, { force: force === true });
+    return { ok: true, data };
+  } catch (err) {
+    console.error("==> codexpp reset-credits failed:", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("codexpp:consume-reset", async (_event, accountId, creditId, redeemRequestId) => {
+  try {
+    const data = await resets.consumeCredit(accountId, creditId, redeemRequestId);
+    return { ok: true, data };
+  } catch (err) {
+    console.error("==> codexpp consume-reset failed:", err.message);
+    return { ok: false, error: err.message };
+  }
+});
+

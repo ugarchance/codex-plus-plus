@@ -16,7 +16,8 @@ param(
   # Electron userData dir, passed to the app with --user-data-dir.
   [string]$DataDir = "$env:LOCALAPPDATA\CodexPP",
   [string]$AppName = "Codex++",
-  [switch]$NoDesktopShortcut
+  [switch]$NoDesktopShortcut,
+  [switch]$AllowUntestedSource
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,14 +27,18 @@ function Info($msg) { Write-Host "==> $msg" }
 function Die($msg)  { Write-Host "error: $msg" -ForegroundColor Red; exit 1 }
 
 function Resolve-SourceApp {
+  $pkg = Get-AppxPackage -Name "OpenAI.Codex" -ErrorAction SilentlyContinue |
+    Sort-Object -Property Version -Descending | Select-Object -First 1
+  if ($pkg) {
+    Info "source package: OpenAI.Codex $($pkg.Version)"
+  }
   if ($SrcApp) {
     if (-not (Test-Path "$SrcApp\resources\app.asar")) {
       Die "no resources\app.asar under: $SrcApp"
     }
+    Info "source folder: $SrcApp"
     return $SrcApp
   }
-  $pkg = Get-AppxPackage -Name "OpenAI.Codex" -ErrorAction SilentlyContinue |
-    Sort-Object -Property Version -Descending | Select-Object -First 1
   if (-not $pkg) {
     Die "store package OpenAI.Codex not found. Install the Codex desktop app first, or pass -SrcApp <folder with ChatGPT.exe>."
   }
@@ -45,9 +50,22 @@ function Resolve-SourceApp {
   return $app
 }
 
+function Backup-ExistingApp {
+  if (Test-Path $DestDir) {
+    $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmssZ")
+    $backupDir = Join-Path $DataDir "backups"
+    $backupTarget = Join-Path $backupDir "CodexPP-$ts"
+    Info "backing up existing app -> $backupTarget"
+    if (-not (Test-Path $backupDir)) {
+      New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    }
+    Move-Item -Path $DestDir -Destination $backupTarget
+  }
+}
+
 function Copy-App {
+  Backup-ExistingApp
   Info "copying -> $DestDir"
-  if (Test-Path $DestDir) { Remove-Item $DestDir -Recurse -Force }
   # robocopy: 0-7 are success, anything else is a real failure
   robocopy $SrcApp $DestDir /E /NFL /NDL /NJH /NJS /NP | Out-Null
   if ($LASTEXITCODE -ge 8) { Die "robocopy failed with exit code $LASTEXITCODE" }
@@ -64,9 +82,15 @@ function Invoke-Patch {
     try { npm install --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "npm install failed" } }
     finally { Pop-Location }
   }
-  & node "$RepoRoot\patch\apply.mjs" `
-      --src "$SrcApp\resources\app.asar" `
-      --out "$DestDir\resources\app.asar"
+  $patchArgs = @(
+    "$RepoRoot\patch\apply.mjs",
+    "--src", "$SrcApp\resources\app.asar",
+    "--out", "$DestDir\resources\app.asar"
+  )
+  if ($AllowUntestedSource) {
+    $patchArgs += "--allow-untested-source"
+  }
+  & node @patchArgs
   if ($LASTEXITCODE -ne 0) { Die "patching failed" }
 }
 

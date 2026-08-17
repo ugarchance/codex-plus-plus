@@ -14,17 +14,36 @@ ENT="$REPO_DIR/.build/entitlements.plist"
 die() { echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
-require_source() {
+gate() {
   [ -d "$SRC_APP" ] || die "source app not found: $SRC_APP"
+  local plist="$SRC_APP/Contents/Info.plist"
+  [ -f "$plist" ] || die "Info.plist not found: $plist"
   [ -f "$SRC_APP/Contents/Resources/app.asar" ] || die "app.asar not found, unexpected build"
-  local v
-  v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$SRC_APP/Contents/Info.plist")"
-  info "source version: $v"
+  local v b
+  v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null)" || die "could not read CFBundleShortVersionString"
+  b="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null)" || die "could not read CFBundleVersion"
+  info "source version: $v ($b)"
+}
+
+require_source() {
+  gate
+}
+
+backup_existing_app() {
+  if [ -e "$DEST_APP" ] || [ -d "$DEST_APP" ]; then
+    local ts backup_dir backup_target
+    ts="$(date -u +%Y%m%d%H%M%SZ)"
+    backup_dir="$USER_DATA_DIR/backups"
+    backup_target="$backup_dir/${APP_NAME}-${ts}.app"
+    info "backing up existing app -> $backup_target"
+    mkdir -p "$backup_dir"
+    mv "$DEST_APP" "$backup_target"
+  fi
 }
 
 copy_bundle() {
+  backup_existing_app
   info "copying -> $DEST_APP"
-  rm -rf "$DEST_APP"
   ditto "$SRC_APP" "$DEST_APP"
   rm -f "$DEST_APP/Contents/embedded.provisionprofile"
   rm -rf "$DEST_APP/Contents/_CodeSignature"
@@ -141,7 +160,7 @@ summary() {
 
 case "${1:-install}" in
   install)
-    require_source
+    gate
     copy_bundle
     install_launcher
     apply_patches
@@ -151,12 +170,15 @@ case "${1:-install}" in
     sign_bundle
     summary
     ;;
+  gate|check)
+    gate
+    ;;
   uninstall)
     info "removing: $DEST_APP"
     rm -rf "$DEST_APP"
     echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;
   *)
-    die "usage: $0 [install|uninstall]"
+    die "usage: $0 [install|gate|uninstall]"
     ;;
 esac
