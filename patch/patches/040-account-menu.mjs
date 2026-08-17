@@ -59,9 +59,9 @@ function reactNamespace(source) {
 }
 
 function block({ jsx, menu, item, react }) {
-  const icon = (path) =>
+  const icon = (path, vb) =>
     `function _cxpIcon(_p){` +
-    `return(0,${jsx}.jsx)(\`svg\`,{className:_p.className,viewBox:\`0 0 20 20\`,fill:\`none\`,` +
+    `return(0,${jsx}.jsx)(\`svg\`,{className:_p.className,viewBox:\`${vb || "0 0 20 20"}\`,fill:\`none\`,` +
     `children:(0,${jsx}.jsx)(\`path\`,{d:\`${path}\`,stroke:\`currentColor\`,strokeWidth:1.5,` +
     `strokeLinecap:\`round\`,strokeLinejoin:\`round\`})})}`;
 
@@ -70,7 +70,7 @@ function block({ jsx, menu, item, react }) {
     icon("M4.5 10.5l3.5 3.5 7.5-8").replace("_cxpIcon", CHECK),
     icon("M10 17.25a7.25 7.25 0 1 1 7.25-7.25M10 10l3.6-3.6").replace("_cxpIcon", GAUGE),
     icon("M12.25 6.25V4.75h-7.5v10.5h7.5v-1.5M8.75 10h8.5M14.75 7.5L17.25 10l-2.5 2.5").replace("_cxpIcon", EXIT),
-    icon("M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0 1 13.66-4.66L20 7M20 15a8 8 0 0 1-13.66 4.66L4 17").replace("_cxpIcon", ROUTE),
+    icon("M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0 1 13.66-4.66L20 7M20 15a8 8 0 0 1-13.66 4.66L4 17", "0 0 24 24").replace("_cxpIcon", ROUTE),
     icon("M10 3.25L2.5 16.75h15L10 3.25zM10 8v4M10 14.5v.5").replace("_cxpIcon", ALERT),
 
     `const _cxpTones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];`,
