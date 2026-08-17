@@ -94,9 +94,10 @@ if (startIdx === -1 || endIdx === -1 || startIdx >= endIdx) {
 }
 
 const fnSource = failoverSource.slice(startIdx + START_MARKER.length, endIdx).trim();
-const poolStats = new Function(`return (${fnSource.replace(/^function\s*_cxpPoolStats/, "function")})`)();
+const { poolStats, poolMsg } = new Function(`${fnSource}; return { poolStats: _cxpPoolStats, poolMsg: _cxpPoolMessage };`)();
 
 assertTruthy("0: _cxpPoolStats extracted successfully as a callable function", typeof poolStats === "function");
+assertTruthy("0: _cxpPoolMessage extracted successfully as a callable function", typeof poolMsg === "function");
 
 const now = 1700000000000;
 
@@ -204,6 +205,22 @@ assertEqual("Extra 3: falls back to id when label and email absent", resExtra.ro
 
 const resNull = poolStats(null, now);
 assertDeepEqual("Extra 4: safe fallback for null accounts", resNull.rows, []);
+
+// ---------------------------------------------------------------------------
+// (m) _cxpPoolMessage title/subtitle selection (review P2 fix)
+// ---------------------------------------------------------------------------
+console.log("\n--- (m): Pool message selection ---");
+
+assertEqual("(m) auto-route off -> off title", poolMsg(false, poolStats(accsA, now)).title, "Automatic routing is off");
+assertEqual("(m) auto-route off -> off subtitle mentions account menu", poolMsg(false, poolStats(accsA, now)).subtitle.includes("account menu"), true);
+assertEqual("(m) all exhausted -> exhausted title", poolMsg(true, poolStats(accsA, now)).title, "All subscription quotas are exhausted");
+assertEqual("(m) all exhausted -> earliest reset subtitle", poolMsg(true, poolStats(accsA, now)).subtitle.startsWith("Earliest quota reset:"), true);
+assertEqual("(m) not all exhausted -> generic no-eligible title", poolMsg(true, poolStats(accsB, now)).title, "No eligible account available");
+assertEqual("(m) not all exhausted -> generic subtitle", poolMsg(true, poolStats(accsB, now)).subtitle.includes("ineligible"), true);
+const accsNoReset = [{ id: "x", label: "X", usedPercent: 100, resetAt: null }];
+assertEqual("(m) exhausted without reset time -> unknown subtitle", poolMsg(true, poolStats(accsNoReset, now)).subtitle, "Reset time unknown.");
+const accsNoUsage = [{ id: "y", label: "Y", usedPercent: null }];
+assertEqual("(m) unknown usage -> generic title, never exhausted claim", poolMsg(true, poolStats(accsNoUsage, now)).title, "No eligible account available");
 
 // ---------------------------------------------------------------------------
 // OZET RAPOR
