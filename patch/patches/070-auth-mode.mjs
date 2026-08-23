@@ -9,10 +9,12 @@ const METHOD_PATTERN =
   `async getAuthMethod\\((${NAME})\\)\\{let\\{authMethod:(${NAME})\\}=await this\\.sendRequest\\(` +
   "`getAuthStatus`,\\{includeToken:!1,refreshToken:!1\\},\\1\\);return \\2\\}";
 
-function replaceAll(source, pattern, label, expected, build) {
+function replaceAll(source, pattern, label, allowed, build) {
   const matches = [...source.matchAll(new RegExp(pattern, "g"))];
-  if (matches.length !== expected) {
-    throw new Error(`pattern ${label} had to match ${expected} times, matched ${matches.length} times`);
+  if (!allowed.includes(matches.length)) {
+    throw new Error(
+      `pattern ${label} had to match ${allowed.join(" or ")} times, matched ${matches.length} times`
+    );
   }
 
   let result = "";
@@ -42,7 +44,7 @@ export default {
     const withStatus =
       source.slice(0, status.index) + normalized + source.slice(status.index + status[0].length);
 
-    return replaceAll(withStatus, METHOD_PATTERN, "auth method read", 2, (match) =>
+    return replaceAll(withStatus, METHOD_PATTERN, "auth method read", [1, 2], (match) =>
       match[0].replace(
         `return ${match[2]}}`,
         `return ${match[2]}===\`chatgptAuthTokens\`?\`chatgpt\`:${match[2]}}`

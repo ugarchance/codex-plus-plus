@@ -269,7 +269,12 @@ const DPR_REPLACEMENT =
   "(globalThis.__cxpMarkActiveIneligible?.(`usageLimitExceeded`)," +
   "t.params.error.codexErrorInfo===`usageLimitExceeded`)&&";
 
-const Z0S_RETURN_PATTERN = `t\\[137\\]=(${NAME})\\):\\1=t\\[137\\],\\1\\}function (${NAME})\\((${NAME})\\)\\{let ${NAME}=\\(0,${NAME}\\.c\\)\\(18\\),`;
+const BANNER_ID = "codex.upsellBanner.plus.headline.noReset";
+const BANNER_WINDOW = 20000;
+
+const Z0S_RETURN_PATTERN =
+  `t\\[(\\d+)\\]=(${NAME})\\):\\2=t\\[\\1\\],\\2\\}` +
+  `function (${NAME})\\((${NAME})\\)\\{let ${NAME}=\\(0,${NAME}\\.c\\)\\(\\d+\\),`;
 
 export default {
   id: "091-rate-limit-failover",
@@ -278,10 +283,12 @@ export default {
   marker: MARKER,
   apply(source) {
     matchOnce(source, DPR_ANCHOR.replace(/[`()${}]/g, "\\$&"), "dpr usageLimitExceeded listener");
-    const z0sMatch = matchOnce(source, Z0S_RETURN_PATTERN, "Z0s return statement");
+    const bannerId = matchOnce(source, BANNER_ID.replace(/[.]/g, "\\."), "upsell banner i18n id");
+    const bannerWindow = source.slice(bannerId.index, bannerId.index + BANNER_WINDOW);
+    const z0sMatch = matchOnce(bannerWindow, Z0S_RETURN_PATTERN, "Z0s return statement");
 
-    const returnVar = z0sMatch[1];
-    const z0sIndex = z0sMatch.index;
+    const returnVar = z0sMatch[2];
+    const z0sIndex = bannerId.index + z0sMatch.index;
 
     // Scan window around Z0s to extract JSX namespace
     const windowStart = Math.max(0, z0sIndex - 5000);

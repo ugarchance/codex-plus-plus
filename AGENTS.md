@@ -122,6 +122,12 @@ Things that have bitten us here, all worth checking before you trust a patch:
   hashed filename; those change on every release.
 - Every patch needs a `marker` that is present after it is applied and absent
   before, so re-running the installer is a no-op.
+- React Compiler memo slot numbers (`t[137]`, `c(18)`) are compiler output, not
+  meaning: they move on every upstream build. Locate the component through an
+  i18n id or protocol constant, then resolve the slot pattern in a bounded
+  window around it.
+- Upstream refactors turn class methods into free functions, so `this` becomes a
+  parameter. An anchor that hardcodes `this.` breaks; capture the receiver.
 
 ## Patching the UI
 

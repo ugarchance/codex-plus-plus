@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **macOS build 26.818.41509 (6962) compatibility**: three patches no longer matched the refreshed renderer bundle and are re-anchored on meaning rather than on compiler output.
+  - `070-auth-mode`: upstream merged the two `getAuthMethod` client classes into one, so the patch now accepts one or two definitions instead of exactly two.
+  - `090-auto-routing-core`: the `thread/started` and `thread/unarchived` handlers moved from class methods to free functions (`this` became a parameter); the literal anchors are now regexes that capture the minified receiver and rewrite it back.
+  - `111-profile-stats`: the React Compiler moved the profile header props from the parameter list into the body, and the avatar container left its `Fragment`; the patch now anchors on the props signature and swaps the avatar container alone.
+  - `091-rate-limit-failover`: the banner anchor depended on React Compiler memo slot numbers (`t[137]`, `c(18)`), which move on every build. It is now located through the `codex.upsellBanner.plus.headline.noReset` i18n id and a bounded window around it.
+- Registered build 26.818.41509 (6962) in `patch/compatibility.json`.
+
 ### Changed
 
 - **Weighted pool capacity calculation**: Replaced unweighted sum and simple averages with plan-capacity-weighted calculations across connected accounts. Subscriptions are weighted proportionally according to official tier capacity ratios (Pro at 200x, Pro Lite at 50x, Plus/Team/Enterprise/Business/Edu at 10x, Free/Go at 1x baseline).

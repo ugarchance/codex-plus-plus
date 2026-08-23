@@ -46,14 +46,17 @@ const helpers = [
   `})();`
 ].join("\n");
 
-const ANCHOR_STARTED = "case`thread/started`:{let{thread:e}=n.params,t=this.upsertConversationFromThread(e);";
-const REPLACEMENT_STARTED = "case`thread/started`:{let{thread:e}=n.params;globalThis.__cxpLearnThread?.(e?.id);let t=this.upsertConversationFromThread(e);";
+const NAME = "[A-Za-z_$][\\w$]*";
 
-const ANCHOR_UNARCHIVED = "case`thread/unarchived`:{let{threadId:e}=n.params;";
-const REPLACEMENT_UNARCHIVED = "case`thread/unarchived`:{let{threadId:e}=n.params;globalThis.__cxpLearnThread?.(e);";
+const STARTED_PATTERN =
+  "case`thread/started`:\\{let\\{thread:(" + NAME + ")\\}=(" + NAME + ")\\.params," +
+  "(" + NAME + ")=(this|" + NAME + ")\\.upsertConversationFromThread\\(\\1\\);";
 
-const ANCHOR_CREATE = "if(n!=null&&x===`durable`)throw Error(`Durable side conversations must start on a local host`);";
-const REPLACEMENT_CREATE = "if(n!=null&&x===`durable`)throw Error(`Durable side conversations must start on a local host`);await globalThis.__cxpAutoRoute?.();";
+const UNARCHIVED_PATTERN =
+  "case`thread/unarchived`:\\{let\\{threadId:(" + NAME + ")\\}=(" + NAME + ")\\.params;";
+
+const ANCHOR_CREATE = "throw Error(`Durable side conversations must start on a local host`);";
+const REPLACEMENT_CREATE = ANCHOR_CREATE + "await globalThis.__cxpAutoRoute?.();";
 
 export default {
   id: "090-auto-routing-core",
@@ -61,12 +64,22 @@ export default {
   glob: "webview/assets/app-initial-*.js",
   marker: MARKER,
   apply(source) {
-    matchOnce(source, ANCHOR_STARTED.replace(/[`()${}]/g, "\\$&"), "thread/started notification handler");
-    matchOnce(source, ANCHOR_UNARCHIVED.replace(/[`()${}]/g, "\\$&"), "thread/unarchived notification handler");
+    const started = matchOnce(source, STARTED_PATTERN, "thread/started notification handler");
+    const unarchived = matchOnce(source, UNARCHIVED_PATTERN, "thread/unarchived notification handler");
     matchOnce(source, ANCHOR_CREATE.replace(/[`()${}]/g, "\\$&"), "createConversation dispatch guard");
 
-    let patched = replaceOnce(source, ANCHOR_STARTED, REPLACEMENT_STARTED);
-    patched = replaceOnce(patched, ANCHOR_UNARCHIVED, REPLACEMENT_UNARCHIVED);
+    const [startedText, thread, startedParams, conversation, receiver] = started;
+    const startedReplacement =
+      "case`thread/started`:{let{thread:" + thread + "}=" + startedParams + ".params;" +
+      "globalThis.__cxpLearnThread?.(" + thread + "?.id);" +
+      "let " + conversation + "=" + receiver + ".upsertConversationFromThread(" + thread + ");";
+
+    const [unarchivedText, threadId] = unarchived;
+    const unarchivedReplacement =
+      unarchivedText + "globalThis.__cxpLearnThread?.(" + threadId + ");";
+
+    let patched = replaceOnce(source, startedText, startedReplacement);
+    patched = replaceOnce(patched, unarchivedText, unarchivedReplacement);
     patched = replaceOnce(patched, ANCHOR_CREATE, REPLACEMENT_CREATE);
 
     return `${helpers}\n${patched}`;

@@ -56,7 +56,7 @@ function block({ jsx, react }) {
   ].join("\n");
 }
 
-const HEAD_PATTERN = `function (${NAME})\\(\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME}),username:(${NAME})\\}\\)`;
+const PROPS_PATTERN = `\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME}),username:(${NAME})\\}`;
 
 export default {
   id: "111-profile-stats",
@@ -64,17 +64,18 @@ export default {
   glob: "webview/assets/app-initial-*.js",
   marker: BLOCK,
   apply(source) {
-    const head = matchOnce(source, HEAD_PATTERN, "profile header component");
-    const start = head.index;
+    const props = matchOnce(source, PROPS_PATTERN, "profile header component");
+    const start = source.lastIndexOf("function ", props.index);
+    if (start < 0) throw new Error("profile header function start not found");
     const body = source.slice(start, start + 2000);
 
-    const JSX_PATTERN = `\\(0,(${NAME})\\.jsxs\\)\\((${NAME})\\.Fragment,\\{children:\\[\\(0,(${NAME})\\.jsx\\)\\(\`div\`,\\{className:\`relative mb-4 size-20\`,children:(${NAME})\\}`;
-    const jsxMatch = matchOnce(body, JSX_PATTERN, "jsx fragment and avatar container");
+    const JSX_PATTERN = `\\(0,(${NAME})\\.jsx\\)\\(\`div\`,\\{className:\`relative mb-4 size-20\`,children:(${NAME})\\}\\)`;
+    const jsxMatch = matchOnce(body, JSX_PATTERN, "avatar container");
     const jsx = jsxMatch[1];
-    const avatarVar = jsxMatch[4];
+    const avatarVar = jsxMatch[2];
     const react = reactNamespace(source);
 
-    const replacement = `(0,${jsx}.jsxs)(${jsx}.Fragment,{children:[(0,${jsx}.jsx)(${BLOCK},{avatar:${avatarVar}}`;
+    const replacement = `(0,${jsx}.jsx)(${BLOCK},{avatar:${avatarVar}})`;
     const patchedBody = body.slice(0, jsxMatch.index) + replacement + body.slice(jsxMatch.index + jsxMatch[0].length);
 
     return (
