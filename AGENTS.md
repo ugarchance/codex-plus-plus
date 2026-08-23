@@ -61,6 +61,33 @@ its destructuring line.
 clear from its callers. `sidebarFooter` appeared in eight places; the single
 meaningful call site said which branch was the dead one.
 
+## DOM anchors: bundle first, then live verification
+
+Always find candidate selectors and flows in the bundle AST **before** touching
+the app — but never trust a bundle string as a DOM anchor on its own. Bundle
+strings can be dead paths: `data-model-picker-model-row` exists in
+`app-initial-*.js` yet never appears in the rendered picker, and a script built
+on it silently measured 0 rows while reporting success. The workflow:
+
+1. Read the bundle (steps above) to collect candidate selectors, aria patterns
+   and the navigation flow around the feature.
+2. Verify every selector against the running app over CDP before using it in a
+   measurement script or patch. A count of 0 means the selector is wrong, not
+   that the list is empty — check `document.querySelectorAll(...).length` for
+   each candidate first.
+3. Record the verified path in `docs/` when it will be reused.
+
+Verified model-picker navigation (app-initial-BqZ9AFkF.js):
+
+- trigger: composer button whose innerText matches
+  `/Sol|Terra|Luna|Auto|5\.\d|Spark|Daybreak/i`
+- popover: `[role="menu"][data-state="open"]`; rows are `[role="menuitem"]`
+  with `aria-label="Model <name>"` / `"Effort <v>"` / `"Speed <v>"`
+- model list: click the `aria-label^="Model "` row, then dump the **last**
+  `[role="menu"][data-state="open"]` `innerText` (one line per model).
+  `[data-model-picker-model-row]` and `[role="menuitemradio"]` do not exist in
+  the live DOM.
+
 ## Writing anchors
 
 An anchor must be based on **meaning, not on a minified name**. In order of
