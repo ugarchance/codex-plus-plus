@@ -5,6 +5,8 @@ const REGISTRY = "globalThis.__cxpClients";
 
 const PATTERN =
   `does not match AppServerManager hostId \\$\\{${NAME}\\}\`\\);this\\.hostId=(${NAME}),`;
+const ACCOUNT_READ_PATTERN =
+  `async getAccount\\((${NAME})\\)\\{return this\\.sendRequest\\(\`account/read\`,\\{refreshToken:!1\\},\\1\\)\\}`;
 
 const helpers = [
   ";(()=>{",
@@ -36,16 +38,15 @@ const helpers = [
   "const _id=_view?.activeAccountId;",
   "return _id?globalThis.__cxpSignOut(_id,_original):_original?.()};",
 
-  "globalThis.__cxpRestore=async _client=>{",
-  "if(globalThis.__cxpRestored)return;",
+  "globalThis.__cxpRestore=_client=>globalThis.__cxpRestorePromise??=(async()=>{",
   "globalThis.__cxpRestored=!0;",
   "let _view;try{_view=globalThis.__codexpp?.accountsSync?.()}catch{return}",
   "const _want=_view?.defaultAccountId;",
-  "if(!_want||_want===_view.activeAccountId)return;",
+  "if(!_want)return;",
   "for(let _attempt=0;_attempt<3;_attempt++){",
-  "await new Promise(_done=>setTimeout(_done,1500*(_attempt+1)));",
+  "await(_attempt?new Promise(_done=>setTimeout(_done,1500*_attempt)):Promise.resolve());",
   "try{if(await globalThis.__cxpActivate(_want))return}catch{}",
-  "}};",
+  "}})();",
 
   "})();"
 ].join("\n");
@@ -57,11 +58,23 @@ export default {
   marker: REGISTRY,
   apply(source) {
     const [anchor, hostId] = matchOnce(source, PATTERN, "AppServerManager constructor");
-    const hooked = replaceOnce(
+    const registered = replaceOnce(
       source,
       anchor,
       `${anchor}(${REGISTRY}??={})[${hostId}]=this,` +
         `${hostId}===\`local\`&&globalThis.__cxpRestore?.(this),`
+    );
+    const [accountRead, accountArg] = matchOnce(
+      registered,
+      ACCOUNT_READ_PATTERN,
+      "account/read method"
+    );
+    const hooked = replaceOnce(
+      registered,
+      accountRead,
+      `async getAccount(${accountArg}){` +
+        `return await(globalThis.__cxpRestorePromise??Promise.resolve()),` +
+        `this.sendRequest(\`account/read\`,{refreshToken:!1},${accountArg})}`
     );
     return `${helpers}\n${hooked}`;
   }

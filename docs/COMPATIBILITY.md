@@ -7,8 +7,8 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 | Platform | ChatGPT Version | Build | app.asar SHA-256 | Tested At | Notes |
 |---|---|---|---|---|---|
 | macOS (`darwin`) | `26.810.52044` | `6662` | `6e7e8791b8bf69a586ff994721fff518af391d9efdc66cd2e620dd2a4aedc90f` | 2026-08-16 | macOS official release |
-
-> **Windows:** There is no tested Windows build entry yet. Windows versions will be added to the list as they are tested.
+| macOS (`darwin`) | `26.818.41509` | `6962` | `8eb91bd9efbf9a4dd04b9b0afdbfcb4e0bab5da18c1919ad74ca327c00c7e791` | 2026-08-23 | macOS official release |
+| Windows (`win32`) | `26.818.41509` | `26.818.5229.0` | `c5d839bc9b122b7ef2a2f0f45186b3e5895923de5b6cef5253c936fe670c0479` | 2026-08-23 | Windows Store package; internal Electron app version shown in the version column |
 
 ## Rules
 

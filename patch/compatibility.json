@@ -15,6 +15,14 @@
       "asarSha256": "8eb91bd9efbf9a4dd04b9b0afdbfcb4e0bab5da18c1919ad74ca327c00c7e791",
       "testedAt": "2026-08-23",
       "notes": "macOS official release"
+    },
+    {
+      "platform": "win32",
+      "version": "26.818.41509",
+      "build": "26.818.5229.0",
+      "asarSha256": "c5d839bc9b122b7ef2a2f0f45186b3e5895923de5b6cef5253c936fe670c0479",
+      "testedAt": "2026-08-23",
+      "notes": "Windows Store package 26.818.5229.0; internal Electron app version 26.818.41509"
     }
   ]
 }
