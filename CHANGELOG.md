@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Failover card never offered a switch**: `_cxpFailoverCard` asked the hub for a suggestion with no exclusion list, so the best candidate was almost always the account already active; the `Switch to <account>` action was therefore never rendered and the card fell back to "No eligible account available". The card now excludes the active account from the request, writes a null result back to state, and re-queries when the active account changes. `isExcluded` in `hub/routing.cjs` also accepts a plain account id string, which previously fell through to "not excluded".
+
 - **macOS build 26.818.41509 (6962) compatibility**: three patches no longer matched the refreshed renderer bundle and are re-anchored on meaning rather than on compiler output.
   - `070-auth-mode`: upstream merged the two `getAuthMethod` client classes into one, so the patch now accepts one or two definitions instead of exactly two.
   - `090-auto-routing-core`: the `thread/started` and `thread/unarchived` handlers moved from class methods to free functions (`this` became a parameter); the literal anchors are now regexes that capture the minified receiver and rewrite it back.

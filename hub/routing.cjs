@@ -91,6 +91,7 @@ function urgencyScore(window, credits = 0, now = Date.now()) {
 
 function isExcluded(excluded, id) {
   if (!excluded || !id) return false;
+  if (typeof excluded === "string") return excluded === id;
   if (excluded instanceof Set) return excluded.has(id);
   if (Array.isArray(excluded)) return excluded.includes(id);
   if (typeof excluded === "object") return Boolean(excluded[id]);

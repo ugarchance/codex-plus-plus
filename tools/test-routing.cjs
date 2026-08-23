@@ -221,6 +221,24 @@ if (docExists) {
 }
 
 // ---------------------------------------------------------------------------
+// T7: chooseAccount exclusion forms
+// ---------------------------------------------------------------------------
+console.log("\n=== T7: chooseAccount exclusion forms ===");
+
+const exclusionPool = [
+  { id: "pro-1", planType: "pro", usedPercent: 39 },
+  { id: "free-full", planType: "free", usedPercent: 100 },
+  { id: "free-idle", planType: "free", usedPercent: 3 }
+];
+const pickOf = (excluded) => routing.chooseAccount(exclusionPool, excluded, {})?.accountId ?? null;
+
+assertEqual("T7: no exclusion picks the eligible pro account", pickOf(null), "pro-1");
+assertEqual("T7: string exclusion is honoured", pickOf("pro-1"), null);
+assertEqual("T7: array exclusion is honoured", pickOf(["pro-1"]), null);
+assertEqual("T7: excluding the exhausted active account still finds the alternate", pickOf(["free-full"]), "pro-1");
+assertEqual("T7: Set exclusion is honoured", pickOf(new Set(["pro-1"])), null);
+
+// ---------------------------------------------------------------------------
 // SUMMARY REPORT
 // ---------------------------------------------------------------------------
 console.log("\n===============================================================");
