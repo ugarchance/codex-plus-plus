@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const {
   classifyWindow,
@@ -87,4 +89,15 @@ const weeklyOnlyRouting = routing.usageForAccount({
 assert.equal(weeklyOnlyRouting.fiveHour, null);
 assert.equal(weeklyOnlyRouting.scoringWindow.usedPercent, 40);
 
-console.log("Usage window tests passed: dual, weekly-only, unknown, legacy and routing exhaustion cases.");
+const accountMenuPatch = fs.readFileSync(
+  path.join(__dirname, "../patch/patches/040-account-menu.mjs"),
+  "utf8"
+);
+assert.match(accountMenuPatch, /`5h left`/);
+assert.match(accountMenuPatch, /`Weekly left`/);
+assert.match(accountMenuPatch, /flex w-full gap-1\.5/);
+assert.doesNotMatch(accountMenuPatch, /progressbar/);
+assert.doesNotMatch(accountMenuPatch, /% used/);
+assert.doesNotMatch(accountMenuPatch, /planType===`pro`/);
+
+console.log("Usage window tests passed: dual, weekly-only, compact cards, legacy and routing exhaustion cases.");
