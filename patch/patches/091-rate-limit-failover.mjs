@@ -1,13 +1,14 @@
-import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
+import { matchOnce } from "../lib/anchor.mjs";
 
 /**
- * Patch 091: Rate Limit Failover & Ineligibility Marking
+ * Patch 091: Rate Limit Failover
  *
  * Discovery notes (docs/routing-anchors.md):
  * - Surface 2: Turn limit/quota banner component (Z0s) and error notification listener (dpr).
  * - When rate limit is reached, offer one-click switch to next best eligible account.
  * - If no other eligible account exists, show aggregated quota warning and reset timing.
- * - Mark current account ineligible upon receiving usageLimitExceeded error.
+ * - Treat usageLimitExceeded as a transient signal; the active account is excluded
+ *   only from the current failover suggestion and is never persisted as ineligible.
  */
 
 const NAME = "[A-Za-z_$][\\w$]*";
@@ -248,28 +249,10 @@ export function __test_failoverCode(jsx, react) {
 const helpers = [
   `;(()=>{`,
   `  const ${MARKER} = true;`,
-  `  globalThis.__cxpMarkActiveIneligible = (_reason) => {`,
-  `    try {`,
-  `      const _api = globalThis.__codexpp;`,
-  `      const _view = _api?.accountsSync?.();`,
-  `      const _activeId = _view?.activeAccountId;`,
-  `      if (_activeId) {`,
-  `        _api?.markIneligible?.(_activeId, _reason ?? "usageLimitExceeded");`,
-  `      }`,
-  `    } catch {}`,
-  `  };`,
   `})();`
 ].join("\n");
 
 const DPR_ANCHOR = "t.params.error.codexErrorInfo===`usageLimitExceeded`&&";
-// Self-balanced replacement: (side-effect, original-condition) && ...
-// The comma expression evaluates the marker call, then yields the original
-// condition unchanged, so downstream semantics are identical and no
-// downstream closing paren is required.
-const DPR_REPLACEMENT =
-  "t.params.error.codexErrorInfo===`usageLimitExceeded`&&" +
-  "(globalThis.__cxpMarkActiveIneligible?.(`usageLimitExceeded`)," +
-  "t.params.error.codexErrorInfo===`usageLimitExceeded`)&&";
 
 const BANNER_ID = "codex.upsellBanner.plus.headline.noReset";
 const BANNER_WINDOW = 20000;
@@ -280,7 +263,7 @@ const Z0S_RETURN_PATTERN =
 
 export default {
   id: "091-rate-limit-failover",
-  description: "One-click switch to eligible account in rate limit banner and mark account ineligible",
+  description: "One-click switch to an eligible account without persisting transient limits",
   glob: "webview/assets/app-initial-*.js",
   marker: MARKER,
   apply(source) {
@@ -329,8 +312,6 @@ export default {
       "\n" +
       nextFnPart +
       source.slice(z0sIndex + z0sMatch[0].length);
-
-    patched = replaceOnce(patched, DPR_ANCHOR, DPR_REPLACEMENT);
 
     return `${helpers}\n${patched}`;
   }

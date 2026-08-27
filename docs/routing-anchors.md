@@ -82,7 +82,7 @@ Constants identified across the bundle via keyword scanning:
 * **AST Range:** `[10426435, 10453689]` (27,254 bytes)
 * **Raw Match Count (`grep -c`):** `1`
 * **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/component-error-10443234.js`
-* **Proposed Injection Point:** When rate limit triggers, invoke `globalThis.__codexpp?.markIneligible(currentAccountId, 'rate_limited')`.
+* **Implemented Behavior:** When a rate limit triggers, exclude the active account only from the current failover suggestion. Temporary quota/model limits are not persisted as account ineligibility.
 
 ### Risk Notes
 * Due to React Compiler memo slots (`t[N]`), hook/state injections prior to JSX return must strictly adhere to React dispatcher rules.
@@ -150,7 +150,7 @@ $ grep -c "id:\`codex.command.newThread\`" /tmp/codexpp-anchor-discovery/app-ini
 | Surface | Selected Anchor | Anchor Type | Regex / String Match | AST Range | Round 2 Action |
 |---|---|---|---|---|---|
 | **Surface I: Dispatcher** | `RequestClient.onResult` / `currentTime/read` | Protocol Log / Method Signature | `currentTime/read` (1) | `[2444983, 2446100]` & `[3214623, 3218507]` | Auto-record via `learnThreadOwner` |
-| **Surface II: Turn Error** | `codex.modelLimitBanner.headline.noReset` & `codex.upsellBanner.plus...` | React i18n ID / Error String | `codex.modelLimitBanner...` (1) | `[10453689, 10455506]` & `[10426435, 10453689]` | `markIneligible` and UI failover recommendation |
+| **Surface II: Turn Error** | `codex.modelLimitBanner.headline.noReset` & `codex.upsellBanner.plus...` | React i18n ID / Error String | `codex.modelLimitBanner...` (1) | `[10453689, 10455506]` & `[10426435, 10453689]` | Transient active-account exclusion and UI failover recommendation |
 | **Surface III: New Chat** | `{item:`new_thread`}` / `CKc` | Telemetry & UI Action Signature | `new_thread` (1) | `[12112423, 12113059]` | Auto-routing with `chooseAccount` |
 
 All discovery slices were verified under `/tmp/codexpp-anchor-discovery/` and prepared for Round 2 patch development.

@@ -22,6 +22,12 @@ const CODEX_ELIGIBLE_PLANS = Object.freeze([
 
 const BLOCKED_PLANS = Object.freeze(["free", "go"]);
 
+const TRANSIENT_INELIGIBLE_REASONS = Object.freeze([
+  "usageLimitExceeded",
+  "429_quota",
+  "rate_limited"
+]);
+
 const CREDIT_BOOST_FACTOR = 0.15;
 const CREDIT_BOOST_CAP = 3;
 const RESET_HORIZON_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms (168 hours)
@@ -31,8 +37,25 @@ function isLearnedIneligible(learned, id) {
   if (!learned || !id) return false;
   if (learned instanceof Set) return learned.has(id);
   if (Array.isArray(learned)) return learned.includes(id);
-  if (typeof learned === "object") return Boolean(learned[id]);
+  if (typeof learned === "object") {
+    const reason = learned[id];
+    return Boolean(reason) && !isTransientIneligibleReason(reason);
+  }
   return false;
+}
+
+function isTransientIneligibleReason(reason) {
+  if (typeof reason !== "string") return false;
+  return TRANSIENT_INELIGIBLE_REASONS.some(
+    (candidate) => candidate.toLowerCase() === reason.trim().toLowerCase()
+  );
+}
+
+function sanitizeLearnedIneligible(learned) {
+  if (!learned || typeof learned !== "object" || Array.isArray(learned)) return {};
+  return Object.fromEntries(
+    Object.entries(learned).filter(([id, reason]) => id && !isTransientIneligibleReason(reason))
+  );
 }
 
 function usageForAccount(account) {
@@ -210,7 +233,7 @@ function read() {
     return {
       version: data.version ?? 1,
       threadOwner: typeof data.threadOwner === "object" && data.threadOwner !== null ? data.threadOwner : {},
-      learnedIneligible: typeof data.learnedIneligible === "object" && data.learnedIneligible !== null ? data.learnedIneligible : {},
+      learnedIneligible: sanitizeLearnedIneligible(data.learnedIneligible),
       autoRoute: data.autoRoute !== false
     };
   } catch {
@@ -259,6 +282,8 @@ function setAutoRoute(enabled) {
 
 function markIneligible(accountId, reason = "ineligible") {
   if (!accountId) return read();
+  // Quota/model limit events are temporary failover signals, not account eligibility facts.
+  if (isTransientIneligibleReason(reason)) return read();
   const data = read();
   if (typeof data.learnedIneligible !== "object" || data.learnedIneligible === null || Array.isArray(data.learnedIneligible)) {
     data.learnedIneligible = {};
@@ -288,11 +313,14 @@ function clearIneligible(accountId) {
 module.exports = {
   CODEX_ELIGIBLE_PLANS,
   BLOCKED_PLANS,
+  TRANSIENT_INELIGIBLE_REASONS,
   CREDIT_BOOST_FACTOR,
   CREDIT_BOOST_CAP,
   RESET_HORIZON_DEFAULT_MS,
   RESET_HORIZON_MIN_MS,
   isEligible,
+  isTransientIneligibleReason,
+  sanitizeLearnedIneligible,
   usageForAccount,
   urgencyScore,
   chooseAccount,
