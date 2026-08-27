@@ -8,6 +8,7 @@ const GAUGE = "_cxpGaugeIcon";
 const EXIT = "_cxpExitIcon";
 const ROUTE = "_cxpRouteIcon";
 const AUTOROW = "_cxpAutoRow";
+const VIEWROW = "_cxpViewRow";
 const ALERT = "_cxpAlertIcon";
 const AVATAR = "_cxpAvatar";
 const ROW = "_cxpAccountRow";
@@ -93,7 +94,20 @@ function block({ jsx, menu, item, react }) {
     `(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:_p.autoRoute?\`On\`:\`Off\`})`,
     `]},\`cxp-auto-route\`)}`,
 
+    `function ${VIEWROW}(_p){`,
+    `const _stop=(e)=>e.stopPropagation();`,
+    `const _choose=(_next,e)=>{e.stopPropagation();e.preventDefault();_p.onChange(_next)};`,
+    `const _button=(_value,_label)=>(0,${jsx}.jsx)(\`button\`,{type:\`button\`,[\`aria-pressed\`]:_p.value===_value,`,
+    `onPointerDown:_stop,onPointerUp:_stop,onMouseDown:_stop,onMouseUp:_stop,onClick:e=>_choose(_value,e),`,
+    `className:\`rounded-md border px-1.5 py-0.5 text-xs font-medium transition-colors\`,`,
+    `style:{backgroundColor:_p.value===_value?\`var(--color-surface-tertiary)\`:\`transparent\`,borderColor:\`var(--color-border-subtle)\`,color:_p.value===_value?\`var(--color-text-primary)\`:\`var(--color-text-secondary)\`},children:_label});`,
+    `return(0,${jsx}.jsxs)(\`div\`,{role:\`group\`,[\`aria-label\`]:\`Usage view\`,onPointerDown:_stop,onPointerUp:_stop,onMouseDown:_stop,onMouseUp:_stop,onClick:_stop,`,
+    `className:\`mx-1 my-0.5 flex select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm\`,children:[`,
+    `(0,${jsx}.jsx)(\`span\`,{className:\`flex-1\`,children:\`View\`}),`,
+    `(0,${jsx}.jsx)(\`div\`,{className:\`flex items-center gap-1\`,children:[_button(\`cards\`,\`Cards\`),_button(\`bars\`,\`Bars\`)]})]})}`,
+
     `const _cxpTones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];`,
+    "const _cxpViewKey=`codexpp.usageView`;",
     "const _cxpPlans={free:`Free`,plus:`Plus`,pro:`Pro`,team:`Team`,business:`Business`,enterprise:`Enterprise`};",
     "function _cxpPlan(_v){return _v?_cxpPlans[_v]??_v:null}",
     "function _cxpLeft(_v){return typeof _v===`number`?Math.max(0,Math.round(100-_v)):null}",
@@ -108,6 +122,14 @@ function block({ jsx, menu, item, react }) {
     `(0,${jsx}.jsx)(\`span\`,{className:\`truncate text-xs font-medium text-codex-primary\`,children:_label}),`,
     `(0,${jsx}.jsx)(\`span\`,{className:\`shrink-0 text-base font-medium tabular-nums text-codex-primary\`,children:_left==null?\`—\`:_left+\`%\`})]}),`,
     `_reset?(0,${jsx}.jsx)(\`span\`,{className:\`mt-0.5 block truncate text-xs text-codex-description\`,children:_reset}):null]})}`,
+    "function _cxpBarTone(_left){if(_left==null)return `--color-text-tertiary`;if(_left>=60)return `--color-chart-green`;if(_left>=25)return `--color-chart-yellow`;return `--color-chart-red`}",
+    `function _cxpWindowBar(_p){`,
+    `const _w=_p.window,_used=typeof _w.usedPercent===\`number\`&&Number.isFinite(_w.usedPercent)?_w.usedPercent:null,_left=_used==null?null:_cxpLeft(_used),_reset=_cxpReset(_w.resetAt),_label=_cxpWindowLabel(_p.kind),_fill=_left==null?0:Math.min(100,Math.max(0,_left)),_tone=_cxpBarTone(_left);`,
+    `return(0,${jsx}.jsxs)(\`div\`,{className:\`flex flex-col gap-1\`,children:[`,
+    `(0,${jsx}.jsxs)(\`div\`,{className:\`flex items-baseline justify-between gap-2 text-xs\`,children:[`,
+    `(0,${jsx}.jsx)(\`span\`,{className:\`font-medium text-codex-primary\`,children:_label}),`,
+    `_reset?(0,${jsx}.jsx)(\`span\`,{className:\`min-w-0 truncate text-right text-codex-description\`,children:_reset}):null]}),`,
+    `(0,${jsx}.jsx)(\`div\`,{role:\`progressbar\`,[\`aria-label\`]:_label,[\`aria-valuemin\`]:0,[\`aria-valuemax\`]:100,[\`aria-valuenow\`]:_left==null?void 0:_fill,className:\`h-1 w-full overflow-hidden rounded-full\`,style:{backgroundColor:\`var(--color-border-subtle)\`},children:(0,${jsx}.jsx)(\`div\`,{className:\`h-full rounded-full transition-[width]\`,style:{width:_fill+\`%\`,backgroundColor:\`var(\${_tone})\`}})})]})}`,
     "function _cxpTitle(_a){const _l=_a.label??_a.email??_a.id;return _a.email&&_l===_a.email?_l.split(`@`)[0]:_l}",
     "let _cxpGuard=0;",
     "function _cxpBlock(_e){_e.preventDefault();_e.stopPropagation()}",
@@ -137,21 +159,23 @@ function block({ jsx, menu, item, react }) {
     `const _right=(0,${jsx}.jsxs)(\`span\`,{className:\`flex shrink-0 items-center gap-1.5 whitespace-nowrap text-codex-description\`,children:[`,
     "_exit,",
     `_p.active?(0,${jsx}.jsx)(${CHECK},{className:\`icon-xs\`}):null,`,
-    "_left==null?`—`:`${_left}%`]});",
-    `const _windowCards=_windows.map((_v,_i)=>(0,${jsx}.jsx)(_cxpWindowCard,{kind:_v.kind,window:_v.window},\`cxp-window-\`+_v.kind+\`-\`+_i));`,
-    `return(0,${jsx}.jsxs)(${item},{onClick:()=>{if(Date.now()-_cxpGuard>500)_p.onPick()},onMouseEnter:()=>_setHover(!0),onMouseLeave:()=>_setHover(!1),className:\`mx-1 my-1 rounded-md border px-2 py-1.5 transition-colors\`,style:{backgroundColor:_hover?\`var(--color-surface-tertiary)\`:\`var(--color-surface-secondary)\`,borderColor:\`var(--color-border-subtle)\`},SubText:null,rightIcon:null,children:[`,
-    `(0,${jsx}.jsx)(${menu}.ItemIcon,{size:\`sm\`,children:(0,${jsx}.jsx)(${AVATAR},{account:_a,index:_p.index})}),`,
+    "_p.view===`bars`?(_left==null?`—`:`${_left}%`):null]});",
+    `const _windowContent=_windows.map((_v,_i)=>(0,${jsx}.jsx)(_p.view===\`bars\`?_cxpWindowBar:_cxpWindowCard,{kind:_v.kind,window:_v.window},\`cxp-window-\`+_v.kind+\`-\`+_i));`,
+    `const _bars=_p.view===\`bars\`;`,
+    `return(0,${jsx}.jsxs)(${item},{onClick:()=>{if(Date.now()-_cxpGuard>500)_p.onPick()},onMouseEnter:()=>_setHover(!0),onMouseLeave:()=>_setHover(!1),className:_bars?\`mx-1 border-b px-2 py-2 transition-colors\`:\`mx-1 my-1 rounded-md border px-2 py-1.5 transition-colors\`,style:{backgroundColor:_hover?\`var(--color-surface-tertiary)\`:(_bars?\`transparent\`:\`var(--color-surface-secondary)\`),borderColor:\`var(--color-border-subtle)\`},SubText:null,rightIcon:null,children:[`,
+    `(0,${jsx}.jsx)(${menu}.ItemIcon,{size:\`sm\`,className:\`mt-0.5 self-start\`,children:(0,${jsx}.jsx)(${AVATAR},{account:_a,index:_p.index})}),`,
     `(0,${jsx}.jsxs)(\`div\`,{className:\`flex min-w-0 flex-1 flex-col\`,children:[`,
     `(0,${jsx}.jsxs)(\`div\`,{className:\`flex min-w-0 items-start justify-between gap-2\`,children:[`,
     `(0,${jsx}.jsxs)(\`div\`,{className:\`min-w-0 flex-1\`,children:[`,
     `(0,${jsx}.jsx)(\`span\`,{className:\`block truncate font-medium text-codex-primary\`,children:_plan?\`\${_cxpTitle(_a)} · \${_plan}\`:_cxpTitle(_a)}),`,
     `_sub?(0,${jsx}.jsx)(\`span\`,{className:\`block truncate text-xs text-codex-description\`,children:_sub}):null]}),_right]}),`,
-    `_windowCards.length>0?(0,${jsx}.jsx)(\`div\`,{className:\`mt-1.5 flex w-full gap-1.5\`,children:_windowCards}):null]})]})}`,
+    `_windowContent.length>0?(0,${jsx}.jsx)(\`div\`,{className:_bars?\`mt-2 flex w-full flex-col gap-2\`:\`mt-1.5 flex w-full gap-1.5\`,children:_windowContent}):null]})]})}`,
 
     `function ${BLOCK}(_props){`,
     "const _api=globalThis.__codexpp;",
     `const[_view,_setView]=(0,${react}.useState)(()=>{try{return _api?.accountsSync?.()??null}catch{return null}});`,
     `const[_routing,_setRouting]=(0,${react}.useState)(()=>{try{return _api?.routingView?.()??null}catch{return null}});`,
+    `const[_usageView,_setUsageView]=(0,${react}.useState)(()=>{try{return localStorage.getItem(_cxpViewKey)===\`bars\`?\`bars\`:\`cards\`}catch{return \`cards\`}});`,
     `(0,${react}.useEffect)(()=>{`,
     "let _alive=!0;",
     "Promise.resolve(_api?.refreshUsage?.()).then(_v=>{if(_alive&&_v)_setView(_v)}).catch(()=>{});",
@@ -163,6 +187,7 @@ function block({ jsx, menu, item, react }) {
     "const _signOut=_id=>{Promise.resolve(globalThis.__cxpSignOut?.(_id)).then(_apply).catch(()=>{})};",
     "const _autoRoute=_routing?.autoRoute!==!1;",
     "const _toggleAutoRoute=()=>{const _next=!_autoRoute;_api?.setAutoRoute?.(_next);_setRouting(_r=>({..._r,autoRoute:_next}))};",
+    "const _changeUsageView=_next=>{const _safe=_next===`bars`?`bars`:`cards`;try{localStorage.setItem(_cxpViewKey,_safe)}catch{};_setUsageView(_safe)};",
 
     "const _activeAcc=_accounts.find(_a=>_a.id===_view?.activeAccountId);",
     "const _activeIneligible=_activeAcc&&(_activeAcc.planType===`free`||_activeAcc.planType===`go`||Boolean(_routing?.learnedIneligible?.[_activeAcc.id]));",
@@ -172,7 +197,7 @@ function block({ jsx, menu, item, react }) {
 
     "const _rows=_accounts.map((_a,_i)=>",
     `(0,${jsx}.jsx)(${ROW},{account:_a,index:_i,active:_a.id===_view?.activeAccountId,routing:_routing,`,
-    "onPick:()=>_pick(_a.id),onSignOut:()=>_signOut(_a.id)},`cxp-account-`+_a.id));",
+    "view:_usageView,onPick:()=>_pick(_a.id),onSignOut:()=>_signOut(_a.id)},`cxp-account-`+_a.id));",
 
     "const _known=_accounts.map(_a=>({w:typeof _a.planWeight===`number`&&_a.planWeight>0?_a.planWeight:1,left:_cxpLeft(_a.usedPercent)})).filter(_e=>_e.left!=null);",
     "const _total=_known.length===_accounts.length",
@@ -184,9 +209,11 @@ function block({ jsx, menu, item, react }) {
     ":_props.usage??null;",
 
     `const _autoRow=(0,${jsx}.jsx)(${AUTOROW},{autoRoute:_autoRoute,onToggle:_toggleAutoRoute});`,
+    `const _viewRow=(0,${jsx}.jsx)(${VIEWROW},{value:_usageView,onChange:_changeUsageView});`,
 
     "_rows.push(",
     "_autoRow,",
+    "_viewRow,",
     `(0,${jsx}.jsx)(${item},{LeftIcon:${PLUS},onClick:()=>_api.addAccount(),children:\`Add another subscription\`},\`cxp-add-account\`));`,
 
     `return(0,${jsx}.jsxs)(${jsx}.Fragment,{children:[_summary,_warning,(0,${jsx}.jsx)(${menu}.Separator,{}),..._rows,(0,${jsx}.jsx)(${menu}.Separator,{})]})}`

@@ -96,8 +96,15 @@ const accountMenuPatch = fs.readFileSync(
 assert.match(accountMenuPatch, /`5h left`/);
 assert.match(accountMenuPatch, /`Weekly left`/);
 assert.match(accountMenuPatch, /flex w-full gap-1\.5/);
-assert.doesNotMatch(accountMenuPatch, /progressbar/);
+assert.match(accountMenuPatch, /codexpp\.usageView/);
+assert.match(accountMenuPatch, /localStorage\.setItem/);
+assert.match(accountMenuPatch, /_p\.view===\\`bars\\`/);
+assert.match(accountMenuPatch, /_p\.view===`bars`\?\(_left/);
+assert.ok(accountMenuPatch.includes("role:\\`progressbar\\`"));
+assert.match(accountMenuPatch, /aria-valuenow/);
+assert.match(accountMenuPatch, /_left>=60/);
+assert.match(accountMenuPatch, /_left>=25/);
 assert.doesNotMatch(accountMenuPatch, /% used/);
 assert.doesNotMatch(accountMenuPatch, /planType===`pro`/);
 
-console.log("Usage window tests passed: dual, weekly-only, compact cards, legacy and routing exhaustion cases.");
+console.log("Usage window tests passed: dual, weekly-only, cards/bars persistence, legacy and routing exhaustion cases.");
