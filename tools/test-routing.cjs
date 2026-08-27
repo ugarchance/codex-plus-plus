@@ -179,7 +179,11 @@ assertEqual("T4: routing.json autoRoute value", readBack.autoRoute, true);
 // File permission mode check (0600)
 const stats = fs.statSync(testFile);
 const modeOctal = (stats.mode & 0o777).toString(8);
-assertEqual("T4: routing.json file mode 0600 (or 600 octal)", modeOctal, "600");
+if (process.platform === "win32") {
+  assertTruthy("T4: routing.json exists on Windows (NTFS ACLs replace POSIX mode bits)", fs.existsSync(testFile));
+} else {
+  assertEqual("T4: routing.json file mode 0600 (or 600 octal)", modeOctal, "600");
+}
 
 // Proof of atomic write in code
 const sourceCode = fs.readFileSync(path.join(__dirname, "../hub/routing.cjs"), "utf8");

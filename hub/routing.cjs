@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const store = require("./store.cjs");
+const { usageWindowsForAccount } = require("./rate-limits.cjs");
 
 // Pure logic constants
 const CODEX_ELIGIBLE_PLANS = Object.freeze([
@@ -32,6 +33,21 @@ function isLearnedIneligible(learned, id) {
   if (Array.isArray(learned)) return learned.includes(id);
   if (typeof learned === "object") return Boolean(learned[id]);
   return false;
+}
+
+function usageForAccount(account) {
+  const usageWindows = usageWindowsForAccount(account);
+  const fiveHour = usageWindows.fiveHour;
+  const weekly = usageWindows.weekly;
+  const other = usageWindows.other;
+  const scoringWindow = [weekly, fiveHour, ...other].find(
+    (window) => typeof window?.usedPercent === "number" && !Number.isNaN(window.usedPercent)
+  ) ?? weekly ?? fiveHour ?? other[0] ?? null;
+  const exhausted = [fiveHour, weekly, ...other].some(
+    (window) => typeof window?.usedPercent === "number" && window.usedPercent >= 100
+  );
+
+  return { usageWindows, fiveHour, weekly, other, scoringWindow, exhausted };
 }
 
 function isEligible(account, learned = null) {
@@ -106,15 +122,17 @@ function chooseAccount(snapshots = [], excluded = null, learned = null, now = Da
     if (!account || !account.id) continue;
     if (isExcluded(excluded, account.id) || (account.accountId && isExcluded(excluded, account.accountId))) continue;
     if (!isEligible(account, storeLearned)) continue;
-    if (typeof account.usedPercent === "number" && account.usedPercent >= 100) continue;
+    const usage = usageForAccount(account);
+    if (usage.exhausted) continue;
     candidates.push(account);
   }
 
   if (candidates.length === 0) return null;
 
   const scored = candidates.map((acc) => {
+    const usage = usageForAccount(acc);
     const hasKnownPlan = acc.planType !== null && acc.planType !== undefined;
-    const hasKnownUsage = typeof acc.usedPercent === "number" && !Number.isNaN(acc.usedPercent);
+    const hasKnownUsage = typeof usage.scoringWindow?.usedPercent === "number" && !Number.isNaN(usage.scoringWindow.usedPercent);
 
     let tier = 0;
     if (hasKnownPlan && hasKnownUsage) tier = 3;
@@ -123,20 +141,22 @@ function chooseAccount(snapshots = [], excluded = null, learned = null, now = Da
     else tier = 0;
 
     const urgency = hasKnownUsage
-      ? urgencyScore(
-          { usedPercent: acc.usedPercent, resetsAt: acc.resetAt ?? acc.resetsAt },
-          acc.credits ?? 0,
-          now
-        )
+      ? urgencyScore(usage.scoringWindow, acc.credits ?? 0, now)
       : null;
 
     return {
       account: acc,
       tier,
       urgency,
-      shortUsedPercent: typeof acc.shortUsedPercent === "number" ? acc.shortUsedPercent : 0,
+      shortUsedPercent:
+        typeof usage.fiveHour?.usedPercent === "number"
+          ? usage.fiveHour.usedPercent
+          : typeof acc.shortUsedPercent === "number"
+            ? acc.shortUsedPercent
+            : 0,
       threadCount: typeof acc.threadCount === "number" ? acc.threadCount : 0,
-      id: String(acc.id ?? "")
+      id: String(acc.id ?? ""),
+      usage
     };
   });
 
@@ -168,9 +188,9 @@ function chooseAccount(snapshots = [], excluded = null, learned = null, now = Da
     accountId: winner.account.id,
     account: winner.account,
     reason: {
-      weeklyUsedPercent: winner.account.usedPercent ?? null,
-      resetsAt: winner.account.resetAt ?? winner.account.resetsAt ?? null,
-      shortUsedPercent: winner.account.shortUsedPercent ?? null,
+      weeklyUsedPercent: winner.usage.weekly?.usedPercent ?? (winner.usage.fiveHour ? null : winner.usage.scoringWindow?.usedPercent ?? null),
+      resetsAt: winner.usage.weekly?.resetAt ?? winner.usage.scoringWindow?.resetAt ?? winner.account.resetAt ?? winner.account.resetsAt ?? null,
+      shortUsedPercent: winner.usage.fiveHour?.usedPercent ?? winner.account.shortUsedPercent ?? null,
       threadCount: winner.account.threadCount ?? 0,
       urgency: winner.urgency
     }
@@ -273,6 +293,7 @@ module.exports = {
   RESET_HORIZON_DEFAULT_MS,
   RESET_HORIZON_MIN_MS,
   isEligible,
+  usageForAccount,
   urgencyScore,
   chooseAccount,
   storePath,

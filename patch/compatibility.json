@@ -23,6 +23,14 @@
       "asarSha256": "c5d839bc9b122b7ef2a2f0f45186b3e5895923de5b6cef5253c936fe670c0479",
       "testedAt": "2026-08-23",
       "notes": "Windows Store package 26.818.5229.0; internal Electron app version 26.818.41509"
+    },
+    {
+      "platform": "win32",
+      "version": "26.820.71523",
+      "build": "26.820.9563.0",
+      "asarSha256": "e353c580ef4939d36f4ae32a35c896d089205c1d06b9f711cf78ffa4a3578a8a",
+      "testedAt": "2026-08-27",
+      "notes": "Windows Store package 26.820.9563.0; internal Electron app version 26.820.71523; local CDP smoke passed"
     }
   ]
 }

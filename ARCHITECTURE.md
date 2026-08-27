@@ -164,6 +164,14 @@ directly — works only with a `codex_cli_rs` user agent and is behind bot
 protection that starts returning HTML 403 pages. The engine path has neither
 problem and reports exactly the number the app's own usage row shows.
 
+The hub normalizes the protocol's `primary` and `secondary` windows into the
+public `usageWindows` shape: `fiveHour`, `weekly`, and `other[]`. Classification
+uses the server-reported duration, so a weekly-only Pro response is rendered as
+one weekly row without inventing a 5h limit. The legacy top-level usage fields
+remain populated from the preferred weekly, 5h, or unknown window in that order;
+routing uses the same normalized windows and excludes an account when any known
+window is exhausted.
+
 ## Provider layer
 
 `ModelProviderInfo` exists in the engine with 18 fields: `base_url`, `env_key`,

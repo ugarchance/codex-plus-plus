@@ -4,6 +4,7 @@ const path = require("node:path");
 const { spawn } = require("node:child_process");
 
 const { codexBinary } = require("./login.cjs");
+const { normalizeRateLimits } = require("./rate-limits.cjs");
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -106,14 +107,11 @@ async function readUsage(credentials) {
 
         const account = await session.send("account/read", { refreshToken: false });
         const limits = await session.send("account/rateLimits/read", {});
-        const primary = limits?.rateLimits?.primary;
 
         results.set(entry.id, {
           email: account?.account?.email ?? null,
           planType: account?.account?.planType ?? entry.planType ?? null,
-          usedPercent: typeof primary?.usedPercent === "number" ? primary.usedPercent : null,
-          resetAt: typeof primary?.resetsAt === "number" ? primary.resetsAt * 1000 : null,
-          windowMins: typeof primary?.windowDurationMins === "number" ? primary.windowDurationMins : null,
+          ...normalizeRateLimits(limits?.rateLimits),
           usageAt: Date.now()
         });
       } catch (err) {
