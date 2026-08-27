@@ -154,3 +154,18 @@ $ grep -c "id:\`codex.command.newThread\`" /tmp/codexpp-anchor-discovery/app-ini
 | **Surface III: New Chat** | `{item:`new_thread`}` / `CKc` | Telemetry & UI Action Signature | `new_thread` (1) | `[12112423, 12113059]` | Auto-routing with `chooseAccount` |
 
 All discovery slices were verified under `/tmp/codexpp-anchor-discovery/` and prepared for Round 2 patch development.
+
+## 7. Windows Store compatibility note
+
+The current Windows Store renderer (`26.820.71523`, package
+`26.820.9563.0`) uses a direct `thread/unarchived` notification handler shape:
+
+```javascript
+case`thread/unarchived`:receiver.handleThreadUnarchived(Il(params.params.threadId));
+```
+
+Patch `090-auto-routing-core` accepts exactly one of the historical
+destructured shape or this direct shape. The direct variant injects the same
+thread-owner learning hook immediately after the case label and fails closed if
+neither or both shapes match. This keeps the compatibility check anchored to
+the real renderer bundle instead of a version or plan-name assumption.

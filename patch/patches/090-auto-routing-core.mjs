@@ -56,6 +56,9 @@ const UNARCHIVED_PATTERN =
   "case`thread/unarchived`:\\{let\\{threadId:(" + NAME + ")\\}=(" + NAME + ")\\.params;";
 
 const ANCHOR_CREATE = "throw Error(`Durable side conversations must start on a local host`);";
+const UNARCHIVED_DIRECT_PATTERN =
+  "case`thread/unarchived`:(" + NAME + ")\\.handleThreadUnarchived\\(Il\\((" + NAME + ")\\.params\\.threadId\\)\\);";
+
 const REPLACEMENT_CREATE = ANCHOR_CREATE + "await globalThis.__cxpAutoRoute?.();";
 
 export default {
@@ -65,7 +68,22 @@ export default {
   marker: MARKER,
   apply(source) {
     const started = matchOnce(source, STARTED_PATTERN, "thread/started notification handler");
-    const unarchived = matchOnce(source, UNARCHIVED_PATTERN, "thread/unarchived notification handler");
+    const optionalMatch = (pattern, label) => {
+      const count = [...source.matchAll(new RegExp(pattern, "g"))].length;
+      return count === 0 ? null : matchOnce(source, pattern, label);
+    };
+    const destructuredUnarchived = optionalMatch(
+      UNARCHIVED_PATTERN,
+      "thread/unarchived destructured notification handler"
+    );
+    const directUnarchived = optionalMatch(
+      UNARCHIVED_DIRECT_PATTERN,
+      "thread/unarchived direct notification handler"
+    );
+    if (Boolean(destructuredUnarchived) === Boolean(directUnarchived)) {
+      throw new Error("thread/unarchived handler shape was not uniquely identified");
+    }
+    const unarchived = destructuredUnarchived ?? directUnarchived;
     matchOnce(source, ANCHOR_CREATE.replace(/[`()${}]/g, "\\$&"), "createConversation dispatch guard");
 
     const [startedText, thread, startedParams, conversation, receiver] = started;
@@ -74,9 +92,20 @@ export default {
       "globalThis.__cxpLearnThread?.(" + thread + "?.id);" +
       "let " + conversation + "=" + receiver + ".upsertConversationFromThread(" + thread + ");";
 
-    const [unarchivedText, threadId] = unarchived;
-    const unarchivedReplacement =
-      unarchivedText + "globalThis.__cxpLearnThread?.(" + threadId + ");";
+    const [unarchivedText] = unarchived;
+    let unarchivedReplacement;
+    if (destructuredUnarchived) {
+      const threadId = unarchived[1];
+      unarchivedReplacement =
+        unarchivedText + "globalThis.__cxpLearnThread?.(" + threadId + ");";
+    } else {
+      const threadIdParams = unarchived[2];
+      const colon = unarchivedText.indexOf(":");
+      unarchivedReplacement =
+        unarchivedText.slice(0, colon + 1) +
+        "globalThis.__cxpLearnThread?.(" + threadIdParams + ".params.threadId);" +
+        unarchivedText.slice(colon + 1);
+    }
 
     let patched = replaceOnce(source, startedText, startedReplacement);
     patched = replaceOnce(patched, unarchivedText, unarchivedReplacement);

@@ -4,6 +4,7 @@ const path = require("node:path");
 
 const native = require("./native.cjs");
 const { weightFor } = require("./weights.cjs");
+const { usageWindowsForAccount } = require("./rate-limits.cjs");
 
 function defaultDataDir() {
   if (process.platform === "win32") {
@@ -130,19 +131,28 @@ function publicView() {
   return {
     activeAccountId: activeAccountId(data),
     defaultAccountId: data.defaultAccountId,
-    accounts: accounts(data).map((a) => ({
-      id: a.id,
-      native: a.native === true,
-      label: a.label ?? null,
-      email: a.email ?? null,
-      planType: a.planType ?? null,
-      planWeight: weightFor(a.planType),
-      windowMins: a.windowMins ?? null,
-      accountId: a.accountId ?? null,
-      avatarUrl: a.avatarUrl ?? null,
-      usedPercent: a.usedPercent ?? null,
-      resetAt: a.resetAt ?? null
-    })),
+    accounts: accounts(data).map((a) => {
+      const usageWindows = usageWindowsForAccount(a);
+      const hasStoredWindows = Boolean(a.usageWindows && typeof a.usageWindows === "object");
+      const weekly = usageWindows.weekly;
+      const fiveHour = usageWindows.fiveHour;
+      const fallback = usageWindows.other[0] ?? fiveHour ?? weekly;
+      const preferred = weekly ?? fiveHour ?? fallback;
+      return {
+        id: a.id,
+        native: a.native === true,
+        label: a.label ?? null,
+        email: a.email ?? null,
+        planType: a.planType ?? null,
+        planWeight: weightFor(a.planType),
+        windowMins: preferred?.windowMins ?? (hasStoredWindows ? null : a.windowMins ?? null),
+        accountId: a.accountId ?? null,
+        avatarUrl: a.avatarUrl ?? null,
+        usedPercent: preferred?.usedPercent ?? (hasStoredWindows ? null : a.usedPercent ?? null),
+        resetAt: preferred?.resetAt ?? (hasStoredWindows ? null : a.resetAt ?? null),
+        usageWindows
+      };
+    }),
     assignments: data.assignments
   };
 }

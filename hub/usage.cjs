@@ -1,6 +1,7 @@
 const store = require("./store.cjs");
 const tokens = require("./tokens.cjs");
 const probe = require("./probe.cjs");
+const { emptyUsage } = require("./rate-limits.cjs");
 
 const STALE_MS = 60_000;
 
@@ -28,7 +29,7 @@ async function collect(force) {
 
   const results = await probe.readUsage(credentials);
   for (const { id } of credentials) {
-    store.updateAccount(id, results.get(id) ?? { usageAt: Date.now(), usedPercent: null });
+    store.updateAccount(id, results.get(id) ?? { ...emptyUsage(), usageAt: Date.now() });
   }
 
   return store.publicView();

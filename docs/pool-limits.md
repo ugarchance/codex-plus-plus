@@ -6,7 +6,30 @@ Codex++ aggregates multiple ChatGPT subscriptions into a single pool. Because di
 
 This document details the live measurement data, official reference pricing ratios, normalized weight table, mathematical aggregation formulas, and fail-open design principles used in Codex++.
 
-## Live Measurement Data (2026-08-17)
+## Current Dual-window Measurement (2026-08-27)
+
+Measurements captured read-only via `codex app-server account/rateLimits/read` at
+`2026-08-27T07:13:14Z` from the two connected Plus subscriptions:
+
+| Account | Plan Type | 5h Window | 5h Reset (UTC) | Weekly Window | Weekly Reset (UTC) |
+|---|---|---:|---|---:|---|
+| Account 1 | `plus` | 35% used | 2026-08-27 11:05:35 | 14% used | 2026-09-01 19:30:42 |
+| Account 2 | `plus` | 0% used | 2026-08-27 12:13:15 | 28% used | 2026-09-01 20:37:51 |
+
+The hub classifies windows by the server-provided duration (`300 +/- 5` minutes
+for 5h and `10080 +/- 60` minutes for weekly), not by plan name. The public
+account view exposes:
+
+```text
+usageWindows: { fiveHour, weekly, other[] }
+```
+
+Each window keeps its source, `usedPercent`, `resetAt` (milliseconds), and
+`windowMins`. The legacy `usedPercent`, `resetAt`, and `windowMins` fields remain
+available and prefer weekly, then 5h, then the first unknown window. A
+weekly-only account therefore exposes no synthetic 5h row.
+
+## Historical Live Measurement (2026-08-17)
 
 Measurements captured directly via `codex app-server account/rateLimits/read` across live subscriptions:
 
