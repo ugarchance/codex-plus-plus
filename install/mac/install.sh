@@ -6,6 +6,7 @@ DEST_APP="${DEST_APP:-/Applications/Codex++.app}"
 BUNDLE_ID="${BUNDLE_ID:-com.local.codexpp}"
 APP_NAME="Codex++"
 USER_DATA_DIR="${USER_DATA_DIR:-$HOME/Library/Application Support/CodexPP}"
+ALLOW_UNTESTED_SOURCE="${ALLOW_UNTESTED_SOURCE:-}"
 CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -69,9 +70,14 @@ apply_patches() {
     info "installing patch dependencies"
     npm --prefix "$REPO_DIR/patch" install --no-audit --no-fund
   fi
-  node "$REPO_DIR/patch/apply.mjs" \
-       --src "$SRC_APP/Contents/Resources/app.asar" \
-       --out "$DEST_APP/Contents/Resources/app.asar"
+  local patch_args=(
+    --src "$SRC_APP/Contents/Resources/app.asar"
+    --out "$DEST_APP/Contents/Resources/app.asar"
+  )
+  if [ -n "${ALLOW_UNTESTED_SOURCE:-}" ]; then
+    patch_args+=(--allow-untested-source)
+  fi
+  node "$REPO_DIR/patch/apply.mjs" "${patch_args[@]}"
 }
 
 install_hub() {

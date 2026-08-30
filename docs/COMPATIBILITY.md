@@ -9,6 +9,8 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 | macOS (`darwin`) | `26.810.52044` | `6662` | `6e7e8791b8bf69a586ff994721fff518af391d9efdc66cd2e620dd2a4aedc90f` | 2026-08-16 | macOS official release |
 | macOS (`darwin`) | `26.818.41509` | `6962` | `8eb91bd9efbf9a4dd04b9b0afdbfcb4e0bab5da18c1919ad74ca327c00c7e791` | 2026-08-23 | macOS official release |
 | Windows (`win32`) | `26.818.41509` | `26.818.5229.0` | `c5d839bc9b122b7ef2a2f0f45186b3e5895923de5b6cef5253c936fe670c0479` | 2026-08-23 | Windows Store package; internal Electron app version shown in the version column |
+| Windows (`win32`) | `26.820.71523` | `26.820.9563.0` | `e353c580ef4939d36f4ae32a35c896d089205c1d06b9f711cf78ffa4a3578a8a` | 2026-08-27 | Windows Store package; local CDP smoke passed |
+| macOS (`darwin`) | `26.825.51511` | `7377` | `f56ac8d5254a10fc4a04e7417fa787d135c3bbca49bad7d668d4ae65833d40c7` | 2026-08-30 | macOS official release; live CDP smoke passed (account menu, cards/bars usage view, account switch) |
 
 ## Rules
 
@@ -23,3 +25,6 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 
 4. **Verification Without Patching (`--check-only`):**
    `node patch/apply.mjs --check-only --src <path-to-app.asar>` verifies whether the specified source `app.asar` matches a known tested build without extracting or modifying any files.
+
+5. **Installer Override:**
+   Both installers pass the override through when asked: `ALLOW_UNTESTED_SOURCE=1 install/mac/install.sh install` on macOS, `-AllowUntestedSource` on Windows. Use it to qualify a fresh upstream build, then record the verified hash here and in `patch/compatibility.json`.

@@ -26,6 +26,9 @@ jobs:
         run: |
           find patch hub tools -type f \( -name "*.mjs" -o -name "*.cjs" \) -not -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
 
+      - name: Patch 090 thread/unarchived shape cases
+        run: node tools/test-unarchived-shapes.mjs
+
       - name: Test apply.mjs --help (expect exit code 0)
         run: node patch/apply.mjs --help
 

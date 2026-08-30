@@ -57,7 +57,8 @@ const UNARCHIVED_PATTERN =
 
 const ANCHOR_CREATE = "throw Error(`Durable side conversations must start on a local host`);";
 const UNARCHIVED_DIRECT_PATTERN =
-  "case`thread/unarchived`:(" + NAME + ")\\.handleThreadUnarchived\\(Il\\((" + NAME + ")\\.params\\.threadId\\)\\);";
+  "case`thread/unarchived`:(" + NAME + ")\\.handleThreadUnarchived\\((?:" + NAME +
+  "\\()?(" + NAME + ")\\.params\\.threadId";
 
 const REPLACEMENT_CREATE = ANCHOR_CREATE + "await globalThis.__cxpAutoRoute?.();";
 

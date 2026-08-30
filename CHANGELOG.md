@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **macOS build 26.825.51511 (7377) compatibility**: `090-auto-routing-core` no longer matched the refreshed renderer bundle. Its `thread/unarchived` direct-handler pattern hardcoded the minified branding helper `Il(`, which upstream renamed to `Mm(`. The wrapper is now an optional non-capturing group over the generic identifier pattern and the params receiver is captured and written back, so the anchor rests on the `thread/unarchived` protocol constant and the `.params.threadId` access instead of on a minified name. The other thirteen patches applied unchanged.
+- Registered build 26.825.51511 (7377) in `patch/compatibility.json` and recorded the previously missing Windows `26.820.71523` row in `docs/COMPATIBILITY.md`.
+
 - **Failover card never offered a switch**: `_cxpFailoverCard` asked the hub for a suggestion with no exclusion list, so the best candidate was almost always the account already active; the `Switch to <account>` action was therefore never rendered and the card fell back to "No eligible account available". The card now excludes the active account from the request, writes a null result back to state, and re-queries when the active account changes. `isExcluded` in `hub/routing.cjs` also accepts a plain account id string, which previously fell through to "not excluded".
 
 - **macOS build 26.818.41509 (6962) compatibility**: three patches no longer matched the refreshed renderer bundle and are re-anchored on meaning rather than on compiler output.
@@ -19,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Registered build 26.818.41509 (6962) in `patch/compatibility.json`.
 
 ### Changed
+
+- **macOS installer parity with Windows**: `install/mac/install.sh` now forwards `--allow-untested-source` when `ALLOW_UNTESTED_SOURCE` is set, matching the Windows installer's `-AllowUntestedSource` switch. Qualifying a fresh upstream build on macOS no longer requires invoking `patch/apply.mjs` by hand.
 
 - **Weighted pool capacity calculation**: Replaced unweighted sum and simple averages with plan-capacity-weighted calculations across connected accounts. Subscriptions are weighted proportionally according to official tier capacity ratios (Pro at 200x, Pro Lite at 50x, Plus/Team/Enterprise/Business/Edu at 10x, Free/Go at 1x baseline).
 - Added `hub/weights.cjs` as single source of truth for plan weights.

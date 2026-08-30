@@ -31,6 +31,14 @@
       "asarSha256": "e353c580ef4939d36f4ae32a35c896d089205c1d06b9f711cf78ffa4a3578a8a",
       "testedAt": "2026-08-27",
       "notes": "Windows Store package 26.820.9563.0; internal Electron app version 26.820.71523; local CDP smoke passed"
+    },
+    {
+      "platform": "darwin",
+      "version": "26.825.51511",
+      "build": "7377",
+      "asarSha256": "f56ac8d5254a10fc4a04e7417fa787d135c3bbca49bad7d668d4ae65833d40c7",
+      "testedAt": "2026-08-30",
+      "notes": "macOS official release; live CDP smoke passed (account menu, cards/bars usage view, account switch)"
     }
   ]
 }

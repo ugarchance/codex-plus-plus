@@ -155,17 +155,30 @@ $ grep -c "id:\`codex.command.newThread\`" /tmp/codexpp-anchor-discovery/app-ini
 
 All discovery slices were verified under `/tmp/codexpp-anchor-discovery/` and prepared for Round 2 patch development.
 
-## 7. Windows Store compatibility note
+## 7. `thread/unarchived` handler shapes
 
-The current Windows Store renderer (`26.820.71523`, package
-`26.820.9563.0`) uses a direct `thread/unarchived` notification handler shape:
+Two shapes of this handler have shipped. The historical one destructures the
+notification params:
 
 ```javascript
-case`thread/unarchived`:receiver.handleThreadUnarchived(Il(params.params.threadId));
+case`thread/unarchived`:{let{threadId:id}=params.params;
 ```
 
-Patch `090-auto-routing-core` accepts exactly one of the historical
-destructured shape or this direct shape. The direct variant injects the same
-thread-owner learning hook immediately after the case label and fails closed if
-neither or both shapes match. This keeps the compatibility check anchored to
-the real renderer bundle instead of a version or plan-name assumption.
+The current one calls the handler directly, wrapping the id in a branding
+helper whose minified name changes between builds — `Il(` on Windows Store
+`26.820.71523`, `Mm(` on macOS `26.825.51511`:
+
+```javascript
+case`thread/unarchived`:receiver.handleThreadUnarchived(Mm(params.params.threadId));
+```
+
+Patch `090-auto-routing-core` accepts exactly one of the two shapes and fails
+closed if neither or both match. The direct variant injects the same
+thread-owner learning hook immediately after the case label.
+
+The wrapper is matched as an optional non-capturing group over the generic
+identifier pattern, and the params receiver is captured and written back — the
+patch never takes a minified name as input. Hardcoding `Il(` is what broke this
+patch on macOS `26.825.51511`; the anchor is now the `thread/unarchived`
+protocol constant plus the `.params.threadId` access, both of which carry
+meaning.
