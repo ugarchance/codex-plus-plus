@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Claude Code sessions as native Codex tools** (`integrations/claude-peers/`): an MCP stdio server that lets Codex list the Claude Code sessions running on the machine, message them, and read their replies — `mcp__claude_peers__list_claude_sessions`, `send_message_to_claude`, `read_claude_messages`, `claude_peer_address`. No relay session: the server speaks Claude's peer socket directly. It also registers itself in `~/.claude/sessions/`, so the traffic is bidirectional — Claude's own `ListAgents` shows Codex as a peer named `codex` and `SendMessage` reaches it. Both installers register it automatically (`SKIP_CLAUDE_PEERS=1` on macOS, `-SkipClaudePeers` on Windows) and the uninstallers remove it. Node only, no dependencies; Windows uses a named pipe instead of a Unix socket.
+
+  The wire format was measured against a live session rather than guessed, and three behaviours are load-bearing: the sender does not send an auth frame (requiring one drops the connection with `ECONNRESET`), the receiver must not write a reply (an `ack` the sender never reads produces `read ECONNRESET` on its side), and every message is preceded by a liveness probe that connects and closes without sending.
+
 ### Fixed
 
 - **macOS build 26.825.51511 (7377) compatibility**: `090-auto-routing-core` no longer matched the refreshed renderer bundle. Its `thread/unarchived` direct-handler pattern hardcoded the minified branding helper `Il(`, which upstream renamed to `Mm(`. The wrapper is now an optional non-capturing group over the generic identifier pattern and the params receiver is captured and written back, so the anchor rests on the `thread/unarchived` protocol constant and the `.params.threadId` access instead of on a minified name. The other thirteen patches applied unchanged.

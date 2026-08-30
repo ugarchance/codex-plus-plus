@@ -84,6 +84,7 @@ macOS (environment variables for `install.sh`):
 | `BUNDLE_ID` | `com.local.codexpp` |
 | `USER_DATA_DIR` | `~/Library/Application Support/CodexPP` |
 | `CODEX_HOME_SHARED` | `~/.codex` |
+| `SKIP_CLAUDE_PEERS` | unset (set to any value to skip the claude-peers MCP server) |
 
 Windows (parameters for `install.ps1`):
 
@@ -92,10 +93,30 @@ Windows (parameters for `install.ps1`):
 | `-SrcApp` | auto-detected from the `OpenAI.Codex` store package |
 | `-DestDir` | `%LOCALAPPDATA%\Programs\CodexPP` |
 | `-DataDir` | `%LOCALAPPDATA%\CodexPP` |
+| `-SkipClaudePeers` | off (skips the claude-peers MCP server) |
 
 `CODEX_HOME` is deliberately **shared** with the original app so thread
 history, projects and skills carry over. The user data dir is separate —
 without it the two apps collide on Electron's single-instance lock.
+
+## Claude Code sessions as Codex tools
+
+The installer also registers `integrations/claude-peers`, an MCP server that
+puts the Claude Code sessions running on this machine into Codex's own tool
+list:
+
+| Tool | Does |
+|---|---|
+| `list_claude_sessions` | live sessions with name, pid, cwd, status |
+| `send_message_to_claude` | message a session; it lands there as a user prompt |
+| `read_claude_messages` | read what Claude sessions sent back |
+| `claude_peer_address` | this server's address, as Claude sees it |
+
+Traffic is bidirectional: the server registers itself the same way a Claude
+session does, so Claude's `ListAgents` lists Codex as `codex` and its
+`SendMessage` reaches it. No relay session is spawned — see
+[`integrations/claude-peers/README.md`](integrations/claude-peers/README.md)
+for the measured wire protocol and its failure modes.
 
 ## How it works
 
