@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -22,18 +23,51 @@ const targetServer = path.join(targetDir, "server.mjs");
 function readConfig() {
   try {
     return fs.readFileSync(configPath, "utf8");
-  } catch {
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
     return "";
   }
 }
 
-function stripBlock(source) {
-  const start = source.indexOf(MARKER);
-  if (start === -1) return { source, found: false };
-  const after = source.indexOf("\n[", start + MARKER.length);
-  const end = after === -1 ? source.length : after + 1;
-  const head = source.slice(0, start).replace(/\n+$/, "\n");
-  return { source: head + source.slice(end), found: true };
+function stripBlock(source, removeChildren = true) {
+  // Locate table boundaries without reserializing unrelated TOML. Strings and
+  // comments cannot introduce headers; nested environment tables survive updates.
+  const key = String.raw`(?:[\w-]+|"(?:[^"\\]|\\.)*"|'[^']*')`;
+  const header = new RegExp(String.raw`^\s*(\[\[?)(${key}(?:\s*\.\s*${key})*)(\]\]?)\s*(?:#.*)?$`);
+  const headers = [];
+  let quote = null, offset = 0;
+  for (const line of source.match(/[^\n]*\n|[^\n]+$/g) || []) {
+    const match = quote === null ? header.exec(line.trimEnd()) : null;
+    if (match && match[1].length === match[3].length) {
+      const keys = match[2].match(new RegExp(key, "g")).map(part =>
+        part.startsWith('"') ? JSON.parse(part) : part.startsWith("'") ? part.slice(1, -1) : part);
+      const owned = keys[0] === "mcp_servers" && keys[1] === "claude_peers" &&
+        (removeChildren || keys.length === 2);
+      headers.push({ offset, owned });
+    }
+    for (let i = 0; i < line.length; i++) {
+      if (quote) {
+        if (quote.startsWith('"') && line[i] === "\\") { i++; continue; }
+        if (line.startsWith(quote, i)) { i += quote.length - 1; quote = null; }
+      } else {
+        if (line[i] === "#") break;
+        if (line[i] === '"' || line[i] === "'") {
+          quote = line.startsWith(line[i].repeat(3), i) ? line[i].repeat(3) : line[i];
+          i += quote.length - 1;
+        }
+      }
+    }
+    offset += line.length;
+  }
+  if (quote) throw new Error("Unterminated TOML string; config.toml was not changed");
+  let result = "", cursor = 0, found = false;
+  for (let i = 0; i < headers.length; i++) {
+    if (!headers[i].owned) continue;
+    result += source.slice(cursor, headers[i].offset);
+    cursor = headers[i + 1]?.offset ?? source.length;
+    found = true;
+  }
+  return { source: result + source.slice(cursor), found };
 }
 
 function block(serverPath) {
@@ -48,9 +82,9 @@ function block(serverPath) {
 
 function backup() {
   if (!fs.existsSync(configPath)) return null;
-  const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
-  const dest = `${configPath}.bak-claude-peers-${stamp}`;
-  fs.copyFileSync(configPath, dest);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const dest = `${configPath}.bak-claude-peers-${stamp}-${randomUUID()}`;
+  fs.copyFileSync(configPath, dest, fs.constants.COPYFILE_EXCL);
   return dest;
 }
 
@@ -78,7 +112,7 @@ fs.copyFileSync(path.join(HERE, "README.md"), path.join(targetDir, "README.md"))
 
 const current = readConfig();
 const desired = block(targetServer);
-const { source: withoutBlock, found } = stripBlock(current);
+const { source: withoutBlock, found } = stripBlock(current, false);
 
 if (found && current.includes(desired.trimEnd())) {
   console.log("==> claude-peers already registered, config unchanged");

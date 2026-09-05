@@ -1,77 +1,68 @@
 # claude-peers
 
-Codex CLI'a, aynı makinedeki Claude Code oturumlarını **native araç** olarak
-açan MCP stdio server'ı. Relay yok: araçlar Claude'un peer soketiyle doğrudan
-konuşur.
+A dependency-free Node.js MCP stdio server that exposes local Claude Code
+sessions as Codex tools. It communicates directly with Claude's peer sockets.
 
-Codex tarafında araçlar `mcp__claude_peers__*` adıyla görünür — tıpkı
-`mcp__codex_app__list_threads` gibi.
+## Tools
 
-## Araçlar
-
-| Araç | İş |
+| Tool | Behavior |
 |---|---|
-| `list_claude_sessions` | Canlı Claude oturumları: isim, pid, cwd, kind, status, soket durumu, adreslenebilirlik |
-| `send_message_to_claude` | Bir oturuma mesaj gönderir; karşı tarafta user prompt olarak açılır |
-| `read_claude_messages` | Claude'ların Codex'e yazdıklarını okur (`wait_seconds` ile bloklar) |
-| `claude_peer_address` | Bu server'ın Claude tarafından görünen adı ve adresi |
+| `list_claude_sessions` | Lists live sessions, names, process IDs, working directories and socket availability. |
+| `send_message_to_claude` | Sends a user prompt to a selected session. |
+| `read_claude_messages` | Reads replies, optionally waiting or filtering by sender name. Unmatched messages remain in order. |
+| `claude_peer_address` | Returns this server's peer name and address. |
 
-## Çift yön
+Codex exposes these tools with the `mcp__claude_peers__` prefix.
 
-Server başlarken kendi soketini açar (POSIX'te `/tmp/cc-socks/<pid>.sock`,
-Windows'ta `\\.\pipe\cc-socks-<pid>`) ve `~/.claude/sessions/<pid>.json` +
-`<pid>.<hash>.key` kaydını yazar. Sonuç: Claude oturumları Codex'i `ListAgents`
-listesinde `codex` adıyla görür ve ona `SendMessage` ile yazabilir. Süreç
-kapanınca kayıt silinir.
+## Installation
 
-Görünen isim `CLAUDE_PEERS_NAME` ile değiştirilir.
+The Codex++ installers register the server automatically. Skip registration with
+`SKIP_CLAUDE_PEERS=1` on macOS or `-SkipClaudePeers` on Windows. For manual setup:
 
-## Protokol
-
-Ölçümle çıkarıldı, tahminle değil. Claude'un peer soketine giden tek satırlık
-JSON:
-
-```json
-{"msgV":1,"msg_id":"<uuid>","type":"user",
- "message":{"role":"user","content":"<cross-session-message from=\"uds:...\" from-name=\"codex\">\n...\n</cross-session-message>"},
- "priority":"next","from":"uds:/tmp/cc-socks/<pid>.sock"}
+```sh
+node integrations/claude-peers/install.mjs --codex-home /path/to/.codex
 ```
 
-Ölçülen üç davranış, üçü de bir hatayla öğrenildi:
+The installer requires an existing `config.toml`, backs it up before each change,
+copies the server to `$CODEX_HOME/mcp/claude-peers`, and manages the
+`[mcp_servers.claude_peers]` table. Repeated installation leaves an identical
+registration unchanged. Other tables and nested environment overrides survive
+updates. Add `--remove` to remove the registration, its subtables and copied files.
+Restart Codex to load the tools. Node.js must be available on PATH.
 
-- Gönderen taraf **auth frame göndermez**. Alıcı auth'u zorunlu tutarsa
-  bağlantı `ECONNRESET` ile düşer. Bu server auth'u opsiyonel tutar;
-  `CLAUDE_PEERS_REQUIRE_AUTH=1` ile zorunlu yapılır.
-- Alıcı **cevap yazmamalıdır**. `{"type":"ack"}` gibi bir yanıt, gönderen onu
-  okumadan kapattığı için karşı tarafta `read ECONNRESET` üretir.
-- Her mesajdan önce bir **canlılık probe'u** gelir: bağlanır, hiçbir şey
-  göndermeden kapanır. Inbox'a yazılmamalıdır.
+## Peer transport
 
-Registry `version` alanı canlı Claude oturumlarının en yüksek sürümüne
-hizalanır; Claude tarafındaki sürüm duvarı bu alana bakar.
+The server registers itself under `~/.claude/sessions` with a JSON record and a
+private key file. Supported Claude versions can discover it through `ListAgents`
+and reply with `SendMessage`. Records are removed on normal shutdown. The socket
+is `/tmp/cc-socks/<pid>.sock` on POSIX (or under `XDG_RUNTIME_DIR`) and
+`\\.\pipe\cc-socks-<pid>` on Windows.
 
-## Kurulum
+The two directions have different authentication behavior:
 
-Codex++ installer'ı bunu kendisi yapar. Elle kurmak için:
+- Codex to Claude: an auth frame containing the destination's peer token precedes
+  the user frame. The user frame carries `msgV`, `msg_id`, `priority: "next"` and
+  a `cross-session-message` envelope with a reply address.
+- Claude to Codex: the original live peer measurements observed no auth frame.
+  Authentication is optional by default; `CLAUDE_PEERS_REQUIRE_AUTH=1` requires
+  a matching auth frame and may prevent those Claude clients from replying.
+- The receiver writes no acknowledgement. Empty connections are liveness probes
+  and do not enter the inbox. Incoming UTF-8 can span multiple socket chunks.
 
-```bash
-node integrations/claude-peers/install.mjs --codex-home "$HOME/.codex"
-```
+Set `CLAUDE_PEERS_NAME` to change the default name `codex`, or
+`CLAUDE_SESSIONS_DIR` to use another registry. The advertised peer version follows
+the highest version recorded for Claude, with a `2.1.0` floor.
 
-Kaldırmak için `--remove`. Script `config.toml`'u yedekler, `[mcp_servers.claude_peers]`
-bloğunu ekler veya günceller ve `server.mjs`'i `$CODEX_HOME/mcp/claude-peers/`
-altına kopyalar. Tekrar çalıştırmak güvenlidir.
+## Validation and limits
 
-Bağımlılık yok, yalnızca Node.js.
+Run `node --test tools/test-claude-peers.mjs`. Tests use temporary configuration,
+a private registry and mock peer sockets. On Windows they exercise real named
+pipes and the installer's extracted registration function; they never contact
+running Claude sessions or read real account credentials.
 
-## Sınırlar
-
-- Yalnızca aynı makinedeki oturumlar. Uzak/cloud oturumlar registry'de
-  görünmez.
-- `delivered` yalnızca **teslimatı** kanıtlar, karşı tarafın işi yaptığını
-  değil.
-- Protokol Claude Code'un iç arayüzüdür; bir sürüm yükseltmesi kayıt alanlarını
-  veya frame biçimini değiştirirse burası kırılır. Kırılma belirtisi:
-  `list_claude_sessions` boş döner ya da gönderim `ECONNRESET` verir.
-- Bir peer mesajı kullanıcı yetkisi taşımaz. Bir tarafta reddedilen izni
-  diğer taraftan geçirmek için kullanılmaz.
+The original PR reported live Claude transport measurements. The merge review
+verified Windows transport with mocks, not a live Windows Claude round trip.
+Claude's peer protocol is internal and can change between releases. Remote/cloud
+sessions are not supported. `delivered` means the socket write completed; it is
+not confirmation that Claude accepted or acted on the prompt. Peer messages do
+not grant user authorization for actions.

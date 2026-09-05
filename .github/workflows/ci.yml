@@ -30,7 +30,7 @@ jobs:
 
       - name: Syntax check JS files
         run: |
-          find patch hub tools -type f \( -name "*.mjs" -o -name "*.cjs" -o -name "*.js" \) -not -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
+          find patch hub tools integrations -type f \( -name "*.mjs" -o -name "*.cjs" -o -name "*.js" \) -not -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
 
       - name: Patch 090 thread/unarchived shape cases
         run: node tools/test-unarchived-shapes.mjs
@@ -46,6 +46,7 @@ jobs:
           node tools/test-usage-windows.cjs
           node --test tools/test-usage-refresh.cjs
           node --test tools/test-providers.cjs
+          node --test tools/test-claude-peers.mjs
 
       - name: Test apply.mjs --bogus-arg (expect non-zero exit code)
         run: |

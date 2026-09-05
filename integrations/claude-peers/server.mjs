@@ -215,15 +215,13 @@ function drainInbox({ waitMs = 0, fromName = null } = {}) {
   return new Promise((resolve) => {
     const attempt = () => {
       const taken = inbox.splice(0, inbox.length);
-      const parsed = taken.map((item) => ({
-        ...parseEnvelope(item.raw),
-        receivedAt: item.receivedAt,
-      }));
-      let keep = parsed;
-      if (fromName) {
-        keep = parsed.filter((p) => (p.fromName || "").toLowerCase() === fromName.toLowerCase());
-        for (const p of parsed) {
-          if (!keep.includes(p)) inbox.push({ receivedAt: p.receivedAt, raw: p.body });
+      const keep = [];
+      for (const item of taken) {
+        const parsed = { ...parseEnvelope(item.raw), receivedAt: item.receivedAt };
+        if (!fromName || (parsed.fromName || "").toLowerCase() === fromName.toLowerCase()) {
+          keep.push(parsed);
+        } else {
+          inbox.push(item);
         }
       }
       if (keep.length > 0 || Date.now() >= deadline) return resolve(keep);
@@ -233,7 +231,7 @@ function drainInbox({ waitMs = 0, fromName = null } = {}) {
   });
 }
 
-function startListener() {
+async function startListener() {
   const pid = process.pid;
   const sockPath = socketPathFor(pid);
   if (process.platform !== "win32") {
@@ -245,9 +243,10 @@ function startListener() {
   const server = net.createServer((conn) => {
     let authed = !REQUIRE_AUTH;
     let buf = "";
+    conn.setEncoding("utf8");
     conn.setTimeout(30000, () => conn.destroy());
     conn.on("data", (chunk) => {
-      buf += chunk.toString("utf8");
+      buf += chunk;
       let idx;
       while ((idx = buf.indexOf("\n")) !== -1) {
         const line = buf.slice(0, idx);
@@ -259,6 +258,7 @@ function startListener() {
         } catch {
           continue;
         }
+        if (!frame || typeof frame !== "object") continue;
         if (frame.type === "auth") {
           authed = frame.token === token;
           if (!authed) return conn.destroy();
@@ -270,13 +270,20 @@ function startListener() {
         if (Array.isArray(content)) {
           content = content.map((part) => part?.text ?? "").join("");
         }
-        inbox.push({ receivedAt: Date.now() / 1000, raw: content || "" });
+        if (typeof content === "string") inbox.push({ receivedAt: Date.now() / 1000, raw: content });
       }
     });
     conn.on("error", () => conn.destroy());
   });
 
-  server.listen(sockPath);
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(sockPath, () => {
+      server.removeListener("error", reject);
+      server.on("error", err => log(`listener error: ${err.message}`));
+      resolve();
+    });
+  });
   if (process.platform !== "win32") {
     try {
       fs.chmodSync(sockPath, 0o600);
@@ -297,7 +304,7 @@ function startListener() {
     peerFeatures: [],
     kind: "interactive",
     entrypoint: "codex-mcp",
-    pidDomain: process.platform === "win32" ? "win32" : "darwin",
+    pidDomain: process.platform,
     messagingSocketPath: sockPath,
     name: SELF_NAME,
     nameSource: "user",
@@ -456,9 +463,9 @@ async function handleRequest(request) {
   if (id != null) respond(id, { error: { code: -32601, message: `unknown method ${method}` } });
 }
 
-function main() {
+async function main() {
   try {
-    startListener();
+    await startListener();
   } catch (err) {
     log(`listener unavailable (${err.message}); send/list still work, inbox will not`);
   }
