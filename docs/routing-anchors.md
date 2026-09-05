@@ -83,6 +83,11 @@ Constants identified across the bundle via keyword scanning:
 * **Raw Match Count (`grep -c`):** `1`
 * **Formatted Slice Path:** `/tmp/codexpp-anchor-discovery/component-error-10443234.js`
 * **Implemented Behavior:** When a rate limit triggers, exclude the active account only from the current failover suggestion. Temporary quota/model limits are not persisted as account ineligibility.
+* **Windows 26.901 port:** patch 091 validates the `usageLimitExceeded` protocol
+  anchor and retains native error handling without a persistent account side
+  effect. Patch 092 renders the failover card from the separate primary bundle.
+  External-provider guards and native Astra model selection remain in the
+  current patches; the historical combined 091 implementation is not restored.
 
 ### Risk Notes
 * Due to React Compiler memo slots (`t[N]`), hook/state injections prior to JSX return must strictly adhere to React dispatcher rules.

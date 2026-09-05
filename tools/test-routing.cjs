@@ -188,6 +188,16 @@ assertEqual("T4: usageLimitExceeded is not persisted", routing.readRouting().lea
 routing.markIneligible("acc-auth-blocked", "auth_ineligible");
 assertEqual("T4: auth ineligibility is persisted", routing.readRouting().learnedIneligible["acc-auth-blocked"], "auth_ineligible");
 
+const recoveredPool = [{ id: "acc-transient", planType: "plus", usedPercent: 20 }];
+assertEqual("T4: account with refreshed quota returns to routing after a legacy quota error",
+  routing.chooseAccount(recoveredPool)?.accountId, "acc-transient");
+assertEqual("T4: an exhausted account remains excluded despite transient eligibility recovery",
+  routing.chooseAccount([{ ...recoveredPool[0], usedPercent: 100 }]), null);
+const beforeTransient = fs.readFileSync(testFile, "utf8");
+routing.markIneligible("acc-transient", " RATE_LIMITED ");
+assertEqual("T4: case-insensitive transient errors do not write routing.json",
+  fs.readFileSync(testFile, "utf8"), beforeTransient);
+
 // File permission mode check (0600)
 const stats = fs.statSync(testFile);
 const modeOctal = (stats.mode & 0o777).toString(8);
