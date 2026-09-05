@@ -39,6 +39,14 @@
       "asarSha256": "f56ac8d5254a10fc4a04e7417fa787d135c3bbca49bad7d668d4ae65833d40c7",
       "testedAt": "2026-08-30",
       "notes": "macOS official release; live CDP smoke passed (account menu, cards/bars usage view, account switch)"
+    },
+    {
+      "platform": "win32",
+      "version": "26.901.41600",
+      "build": "26.901.5280.0",
+      "asarSha256": "6579c4326cccdb508d079ecc878ad4725451b2234370d2ed9d4db53939cf99c7",
+      "testedAt": "2026-09-05",
+      "notes": "Windows Store; 19 patches / 7 JS files verified. Astra message, account/reset credits, inline Providers, model selection and scrolling verified with CDP. Windows DPAPI key storage, three-connection selection, live Go messages/tools across three protocols and quota reads tested. See docs for tool limitations. Requires matching executable ASAR integrity metadata."
     }
   ]
 }

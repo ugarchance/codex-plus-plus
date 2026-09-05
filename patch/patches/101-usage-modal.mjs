@@ -141,7 +141,8 @@ function findStatementEnd(src, from) {
 export default {
   id: "101-usage-modal",
   description: "Per-account reset credit selector and consumption in the usage limits modal",
-  glob: "webview/assets/app-initial-*.js",
+  glob: "webview/assets/app-*.js",
+  select: "codex.rateLimitResetPromptModal.closeUsageModal",
   marker: MODAL_BLOCK,
   apply(source) {
     const head = matchOnce(source, HEAD_PATTERN, "usage modal component");

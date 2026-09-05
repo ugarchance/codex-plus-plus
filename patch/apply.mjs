@@ -286,7 +286,7 @@ async function main() {
 
     // Syntax gate: every patched file must still be valid JavaScript.
     // webview asset bundles are ES modules; main-process/preload files are scripts.
-    for (const relFile of patchedFiles) {
+    for (const relFile of new Set(patchedFiles)) {
       const filePath = path.join(workDir, relFile);
       const code = fs.readFileSync(filePath, "utf-8");
       const sourceType = relFile.startsWith("webview/assets") ? "module" : "script";

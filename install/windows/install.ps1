@@ -77,12 +77,10 @@ function Invoke-Patch {
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Die "node not found. Node.js required: https://nodejs.org"
   }
-  if (-not (Test-Path "$RepoRoot\patch\node_modules")) {
-    Info "installing patch dependencies"
-    Push-Location "$RepoRoot\patch"
-    try { npm install --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "npm install failed" } }
-    finally { Pop-Location }
-  }
+  Info "installing locked patch dependencies"
+  Push-Location "$RepoRoot\patch"
+  try { npm ci --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "npm ci failed" } }
+  finally { Pop-Location }
   $patchArgs = @(
     "$RepoRoot\patch\apply.mjs",
     "--src", "$SrcApp\resources\app.asar",
@@ -93,6 +91,8 @@ function Invoke-Patch {
   }
   & node @patchArgs
   if ($LASTEXITCODE -ne 0) { Die "patching failed" }
+  & node "$RepoRoot\patch\windows-integrity.mjs" "$DestDir\ChatGPT.exe" "$SrcApp\resources\app.asar" "$DestDir\resources\app.asar"
+  if ($LASTEXITCODE -ne 0) { Die "Windows ASAR integrity update failed" }
 }
 
 function Install-Hub {
