@@ -86,7 +86,10 @@ const t1Cases = [
   { account: { id: "acc-null", planType: null }, expected: true, note: "planType null -> included (low priority)" },
   { account: { id: "acc-undef", planType: undefined }, expected: true, note: "planType undefined -> included (low priority)" },
   { account: { id: "acc-unknown", planType: "some_unrecognized_custom_tier" }, expected: false, note: "unrecognized plan string -> excluded (whitelist)" },
-  { account: { id: "acc-learned-blocked", planType: "pro" }, learned: new Set(["acc-learned-blocked"]), expected: false, note: "learned ineligible -> excluded" }
+  { account: { id: "acc-learned-blocked", planType: "pro" }, learned: new Set(["acc-learned-blocked"]), expected: false, note: "learned ineligible -> excluded" },
+  { account: { id: "acc-transient-limit", planType: "plus" }, learned: { "acc-transient-limit": "usageLimitExceeded" }, expected: true, note: "temporary usage limit does not permanently exclude Plus" },
+  { account: { id: "acc-transient-429", planType: "plus" }, learned: { "acc-transient-429": "429_quota" }, expected: true, note: "legacy 429 quota marker does not permanently exclude Plus" },
+  { account: { id: "acc-auth-blocked", planType: "plus" }, learned: { "acc-auth-blocked": "auth_ineligible" }, expected: false, note: "persistent auth ineligibility remains excluded" }
 ];
 
 for (const c of t1Cases) {
@@ -164,7 +167,10 @@ const testFile = routing.routingPath();
 const initialData = {
   version: 1,
   threadOwner: { "thread-alpha": "acc-plus-40" },
-  learnedIneligible: { "acc-broken": "429_quota" },
+  learnedIneligible: {
+    "acc-transient": "429_quota",
+    "acc-broken": "auth_ineligible"
+  },
   autoRoute: true
 };
 
@@ -173,8 +179,24 @@ const readBack = routing.readRouting();
 
 assertEqual("T4: routing.json write/read roundtrip version", readBack.version, 1);
 assertEqual("T4: routing.json threadOwner match", readBack.threadOwner["thread-alpha"], "acc-plus-40");
-assertEqual("T4: routing.json learnedIneligible match", readBack.learnedIneligible["acc-broken"], "429_quota");
+assertEqual("T4: transient quota marker is ignored on read", readBack.learnedIneligible["acc-transient"], undefined);
+assertEqual("T4: persistent learnedIneligible match", readBack.learnedIneligible["acc-broken"], "auth_ineligible");
 assertEqual("T4: routing.json autoRoute value", readBack.autoRoute, true);
+
+routing.markIneligible("acc-plus-40", "usageLimitExceeded");
+assertEqual("T4: usageLimitExceeded is not persisted", routing.readRouting().learnedIneligible["acc-plus-40"], undefined);
+routing.markIneligible("acc-auth-blocked", "auth_ineligible");
+assertEqual("T4: auth ineligibility is persisted", routing.readRouting().learnedIneligible["acc-auth-blocked"], "auth_ineligible");
+
+const recoveredPool = [{ id: "acc-transient", planType: "plus", usedPercent: 20 }];
+assertEqual("T4: account with refreshed quota returns to routing after a legacy quota error",
+  routing.chooseAccount(recoveredPool)?.accountId, "acc-transient");
+assertEqual("T4: an exhausted account remains excluded despite transient eligibility recovery",
+  routing.chooseAccount([{ ...recoveredPool[0], usedPercent: 100 }]), null);
+const beforeTransient = fs.readFileSync(testFile, "utf8");
+routing.markIneligible("acc-transient", " RATE_LIMITED ");
+assertEqual("T4: case-insensitive transient errors do not write routing.json",
+  fs.readFileSync(testFile, "utf8"), beforeTransient);
 
 // File permission mode check (0600)
 const stats = fs.statSync(testFile);
@@ -223,6 +245,19 @@ if (docExists) {
   assertTruthy("T6: Surface III (New Chat UI) present in document", docContent.includes("Surface III: New Chat") || docContent.includes("Surface III: New Thread"));
   assertTruthy("T6: Raw grep -c outputs present in document", docContent.includes("grep -c"));
 }
+
+const failoverPatch = fs.readFileSync(
+  path.join(__dirname, "../patch/patches/091-rate-limit-failover.mjs"),
+  "utf8"
+);
+assertTruthy(
+  "T6: transient usage limit is not persisted as learned ineligible",
+  !failoverPatch.includes("markIneligible?.(_activeId")
+);
+assertTruthy(
+  "T6: current failover still excludes the active account",
+  failoverPatch.includes("routingSuggest?.(_self ? [_self] : void 0)")
+);
 
 // ---------------------------------------------------------------------------
 // T7: chooseAccount exclusion forms

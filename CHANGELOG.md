@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Routing after a quota reset**: transient `usageLimitExceeded`, `429_quota`
+  and `rate_limited` events no longer permanently exclude accounts. Old transient
+  markers are ignored; exhausted quotas and persistent auth exclusions still
+  prevent selection. The current failover suggestion continues to exclude the
+  active account.
+- **Usage window source preservation**: weekly and five-hour windows retain
+  their upstream primary/secondary source when loaded from storage.
+- Account menu reset times use compact time, tomorrow and weekday labels.
+
 - **macOS build 26.825.51511 (7377) compatibility**: `090-auto-routing-core` no longer matched the refreshed renderer bundle. Its `thread/unarchived` direct-handler pattern hardcoded the minified branding helper `Il(`, which upstream renamed to `Mm(`. The wrapper is now an optional non-capturing group over the generic identifier pattern and the params receiver is captured and written back, so the anchor rests on the `thread/unarchived` protocol constant and the `.params.threadId` access instead of on a minified name. The other thirteen patches applied unchanged.
 - Registered build 26.825.51511 (7377) in `patch/compatibility.json` and recorded the previously missing Windows `26.820.71523` row in `docs/COMPATIBILITY.md`.
 - **Quota refresh across multiple subscriptions**: an expired/revoked account no longer stops valid accounts from refreshing. Failed accounts show an explicit sign-in/usage error instead of an old percentage; successful reads clear the error. Reproduced and fixed the gptugar 57% display from an August 23 cache while the live account reported a different weekly quota.

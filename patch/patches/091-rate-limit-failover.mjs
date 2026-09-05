@@ -1,13 +1,14 @@
 import { matchOnce } from "../lib/anchor.mjs";
 
 /**
- * Patch 091: Rate Limit Failover & Ineligibility Marking
+ * Patch 091: Rate Limit Failover
  *
  * Discovery notes (docs/routing-anchors.md):
  * - Surface 2: Turn limit/quota banner component (Z0s) and error notification listener (dpr).
  * - When rate limit is reached, offer one-click switch to next best eligible account.
  * - If no other eligible account exists, show aggregated quota warning and reset timing.
- * - Mark current account ineligible upon receiving usageLimitExceeded error.
+ * - Treat usageLimitExceeded as a transient signal; the active account is excluded
+ *   only from the current failover suggestion and is never persisted as ineligible.
  */
 
 const NAME = "[A-Za-z_$][\\w$]*";
@@ -248,28 +249,10 @@ export function __test_failoverCode(jsx, react) {
 const helpers = [
   `;(()=>{`,
   `  const ${MARKER} = true;`,
-  `  globalThis.__cxpMarkActiveIneligible = (_reason) => {`,
-  `    try {`,
-  `      const _api = globalThis.__codexpp;`,
-  `      const _view = _api?.accountsSync?.();`,
-  `      const _activeId = _view?.activeAccountId;`,
-  `      if (_activeId) {`,
-  `        _api?.markIneligible?.(_activeId, _reason ?? "usageLimitExceeded");`,
-  `      }`,
-  `    } catch {}`,
-  `  };`,
   `})();`
 ].join("\n");
 
 const DPR_PATTERN = `(${NAME})\\.params\\.error\\.codexErrorInfo===\`usageLimitExceeded\`&&`;
-// Self-balanced replacement: (side-effect, original-condition) && ...
-// The comma expression evaluates the marker call, then yields the original
-// condition unchanged, so downstream semantics are identical and no
-// downstream closing paren is required.
-const dprReplacement = (receiver) =>
-  `${receiver}.params.error.codexErrorInfo===\`usageLimitExceeded\`&&` +
-  "(globalThis.__cxpMarkActiveIneligible?.(`usageLimitExceeded`)," +
-  `${receiver}.params.error.codexErrorInfo===\`usageLimitExceeded\`)&&`;
 
 const BANNER_ID = "codex.upsellBanner.plus.headline.noReset";
 const BANNER_WINDOW = 20000;
@@ -335,11 +318,13 @@ export const bannerPatch = {
 
 export default {
   id: "091-rate-limit-failover",
-  description: "Mark the active account ineligible on a usage limit error",
+  description: "Preserve native quota handling without persisting transient ineligibility",
   glob: "webview/assets/app-initial-*.js",
   marker: MARKER,
   apply(source) {
-    const match = matchOnce(source, DPR_PATTERN, "usageLimitExceeded listener");
-    return `${helpers}\n${source.slice(0, match.index)}${dprReplacement(match[1])}${source.slice(match.index + match[0].length)}`;
+    // Keep a compatibility marker and validate the protocol anchor, while leaving
+    // native error handling intact. Patch 092 supplies the transient failover UI.
+    matchOnce(source, DPR_PATTERN, "usageLimitExceeded listener");
+    return `${helpers}\n${source}`;
   }
 };

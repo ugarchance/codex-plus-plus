@@ -5,6 +5,7 @@ const path = require("node:path");
 const {
   classifyWindow,
   normalizeRateLimits,
+  normalizeStoredUsageWindows,
   usageWindowsForAccount
 } = require("../hub/rate-limits.cjs");
 const routing = require("../hub/routing.cjs");
@@ -35,6 +36,17 @@ assert.deepEqual(dual.usageWindows.weekly, {
 assert.equal(dual.usedPercent, 14, "legacy aliases prefer weekly usage");
 assert.equal(dual.windowMins, 10080, "legacy aliases prefer weekly duration");
 assert.equal(dual.shortUsedPercent, 35, "short usage remains available for routing");
+
+const reversed = normalizeRateLimits({
+  primary: window(14, 1788291042, 10080),
+  secondary: window(35, 1787828735, 300)
+});
+assert.equal(reversed.usageWindows.weekly.source, "primary", "weekly keeps the primary source when protocol order is reversed");
+assert.equal(reversed.usageWindows.fiveHour.source, "secondary", "five-hour keeps the secondary source when protocol order is reversed");
+
+const reversedRoundTrip = normalizeStoredUsageWindows(reversed.usageWindows);
+assert.equal(reversedRoundTrip.weekly.source, "primary", "stored weekly source survives the reversed-order round-trip");
+assert.equal(reversedRoundTrip.fiveHour.source, "secondary", "stored five-hour source survives the reversed-order round-trip");
 
 const weeklyOnly = usageWindowsForAccount({
   planType: "pro",
@@ -104,6 +116,9 @@ assert.ok(accountMenuPatch.includes("role:\\`progressbar\\`"));
 assert.match(accountMenuPatch, /aria-valuenow/);
 assert.match(accountMenuPatch, /_left>=60/);
 assert.match(accountMenuPatch, /_left>=25/);
+assert.doesNotMatch(accountMenuPatch, /Resets (today|tomorrow|)/);
+assert.ok(accountMenuPatch.includes("return `Tomorrow ${_time}`"));
+assert.match(accountMenuPatch, /weekday:`short`,hour:`2-digit`,minute:`2-digit`/);
 assert.doesNotMatch(accountMenuPatch, /% used/);
 assert.doesNotMatch(accountMenuPatch, /planType===`pro`/);
 

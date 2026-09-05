@@ -72,8 +72,8 @@ function normalizeStoredUsageWindows(raw) {
   if (!raw || typeof raw !== "object") return null;
 
   const windows = [
-    normalizeWindow(raw.fiveHour, "primary"),
-    normalizeWindow(raw.weekly, "secondary"),
+    normalizeWindow(raw.fiveHour, raw.fiveHour?.source ?? "primary"),
+    normalizeWindow(raw.weekly, raw.weekly?.source ?? "secondary"),
     ...(Array.isArray(raw.other) ? raw.other.map((window) => normalizeWindow(window, window?.source ?? "other")) : [])
   ].filter(Boolean);
 
