@@ -23,10 +23,22 @@
 4. The same reproduction after the port reports: source remains `primary`,
    recovered-account selection is true, new transient persistence is false,
    and persistent auth exclusion remains true.
-5. Routing, usage windows, pool statistics, weights and reset-cache tests pass.
-   Apply the full patch set to the previously extracted original Windows 26.901
-   ASAR and parse all resulting bundles. Package an isolated candidate for the
-   account-menu check; the original Store app and installed Codex++ remain intact.
+5. Routing (52), pool statistics (56), weights (29), usage-window and reset-cache
+   tests pass. All 19 patches apply to the previously extracted original Windows
+   26.901 ASAR; all seven resulting JavaScript files parse successfully.
+6. Repacked an isolated candidate and updated its executable integrity record.
+   Backed up the isolated profile's auth/account files before launching it with
+   a separate CODEX_HOME and debugging port 9356. The original Store app and
+   installed Codex++ remained running and unchanged.
+7. Read the previously extracted account-menu component, then verified the live
+   profile trigger and open menu over CDP. Real mouse events opened nine menu
+   rows; the weekly bar rendered a compact local weekday/time without `Resets`.
+   Screenshot and DOM evidence stay in ignored `.build/pr7-account-menu.png` and
+   `.build/pr7-ui-result.json` because they contain account information.
+8. A delayed check retained the open account menu. Startup output contained zero
+   `desktop_fetch_auth_401`, `account_info_token_unavailable`,
+   `authenticatedAccountPresent=false`, `ReferenceError` or `TypeError` matches.
+   Closed only the candidate process tree and restored its isolated auth/accounts.
 
 This source-label fix does not itself change the displayed remaining percentage.
 The earlier stale-account quota refresh issue was fixed separately in `8ea92b0`.
