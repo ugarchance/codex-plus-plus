@@ -17,7 +17,8 @@ param(
   [string]$DataDir = "$env:LOCALAPPDATA\CodexPP",
   [string]$AppName = "Codex++",
   [switch]$NoDesktopShortcut,
-  [switch]$AllowUntestedSource
+  [switch]$AllowUntestedSource,
+  [switch]$SkipClaudePeers
 )
 
 $ErrorActionPreference = "Stop"
@@ -101,6 +102,19 @@ function Install-Hub {
   Copy-Item "$RepoRoot\hub" $hub -Recurse
 }
 
+function Install-ClaudePeers {
+  if ($SkipClaudePeers) {
+    Info "skipping claude-peers (-SkipClaudePeers)"
+    return
+  }
+  Info "registering claude-peers MCP server"
+  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+  & node "$RepoRoot\integrations\claude-peers\install.mjs" --codex-home $codexHome
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "    ! claude-peers registration failed, continuing" -ForegroundColor Yellow
+  }
+}
+
 function New-Shortcut([string]$Path) {
   $shell = New-Object -ComObject WScript.Shell
   $lnk = $shell.CreateShortcut($Path)
@@ -131,6 +145,7 @@ if (-not (Test-Path "$SrcApp\ChatGPT.exe")) {
 Copy-App
 Invoke-Patch
 Install-Hub
+Install-ClaudePeers
 Install-Shortcuts
 
 Write-Host ""
@@ -139,6 +154,9 @@ Write-Host ""
 Write-Host "  app        : $DestDir"
 Write-Host "  user data  : $DataDir  (private; the store app keeps its own)"
 Write-Host "  CODEX_HOME : $env:USERPROFILE\.codex  (shared with the original)"
+if (-not $SkipClaudePeers) {
+  Write-Host "  claude-peers: $env:USERPROFILE\.codex\mcp\claude-peers  (Claude sessions as Codex tools)"
+}
 Write-Host ""
 Write-Host "  start it from the Start Menu (`"$AppName`")"
 Write-Host "  after a store update re-run this script to refresh the copy"

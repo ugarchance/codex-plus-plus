@@ -8,15 +8,22 @@
 param(
   [string]$DestDir = "$env:LOCALAPPDATA\Programs\CodexPP",
   [string]$DataDir = "$env:LOCALAPPDATA\CodexPP",
-  [string]$AppName = "Codex++"
+  [string]$AppName = "Codex++",
+  [switch]$KeepClaudePeers
 )
 
 $ErrorActionPreference = "Stop"
+$RepoRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
 
 function Info($msg) { Write-Host "==> $msg" }
 
 Info "removing: $DestDir"
 if (Test-Path $DestDir) { Remove-Item $DestDir -Recurse -Force }
+
+if (-not $KeepClaudePeers) {
+  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+  & node "$RepoRoot\integrations\claude-peers\install.mjs" --codex-home $codexHome --remove
+}
 
 $targets = @(
   (Join-Path ([Environment]::GetFolderPath("Programs")) "$AppName.lnk"),
