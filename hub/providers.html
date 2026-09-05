@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Codex++ · Providers</title>
+    <link rel="stylesheet" href="providers.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <small>CODEX++</small>
+        <h1>Providers</h1>
+        <p>Models, connections, and usage in one place.</p>
+      </div>
+      <button id="refresh-registry">Update catalog</button>
+    </header>
+    <nav>
+      <button id="connections-tab" aria-selected="true">Connections</button
+      ><button id="usage-tab" aria-selected="false">Accounts and usage</button
+      ><span id="catalog-info"></span>
+    </nav>
+    <div id="status" role="status" aria-live="polite"></div>
+    <main>
+      <section id="connections">
+        <div class="section-title">
+          <h2>Connected providers</h2>
+          <button id="add">+ Connect provider</button>
+        </div>
+        <div id="cards"></div>
+      </section>
+      <section id="usage" hidden>
+        <div class="section-title">
+          <h2>Accounts and usage</h2>
+          <button id="refresh-usage">Refresh</button>
+        </div>
+        <p class="muted">
+          Subscription limits, reset credits, and API usage are shown separately.
+        </p>
+        <div id="usage-cards"></div>
+      </section>
+      <section id="editor" hidden>
+        <div class="section-title">
+          <h2 id="edit-title">Connect provider</h2>
+          <button id="cancel">Close</button>
+        </div>
+        <form id="form">
+          <div class="grid">
+            <label>Provider<select id="provider" required></select></label
+            ><label
+              >Connection name<input
+                id="label"
+                maxlength="160"
+                required
+                placeholder="My personal account"
+            /></label>
+          </div>
+          <label
+            >API endpoint<input
+              id="endpoint"
+              type="url"
+              required
+              spellcheck="false"
+          /></label>
+          <p id="provider-note" class="muted"></p>
+          <label
+            >API key<input
+              id="api-key"
+              type="password"
+              autocomplete="new-password"
+              spellcheck="false"
+              placeholder="Key is encrypted on this computer"
+          /></label>
+          <label class="check"
+            ><input id="enabled" type="checkbox" checked /> Connection enabled</label
+          >
+          <div class="actions">
+            <button type="submit" id="save">Save</button
+            ><button type="button" id="discover">
+              Save and fetch models
+            </button>
+          </div>
+          <div class="section-title">
+            <h3>Models</h3>
+            <button type="button" id="add-model">+ Add model</button>
+          </div>
+          <p class="muted">
+            Selected models appear in the Codex++ model menu. Model access depends on your provider account. Restart Codex++ for new models.
+          </p>
+          <div id="models"></div>
+        </form>
+      </section>
+    </main>
+    <script src="providers-ui.js"></script>
+  </body>
+</html>

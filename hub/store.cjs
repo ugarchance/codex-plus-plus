@@ -149,6 +149,7 @@ function publicView() {
         accountId: a.accountId ?? null,
         avatarUrl: a.avatarUrl ?? null,
         usedPercent: preferred?.usedPercent ?? (hasStoredWindows ? null : a.usedPercent ?? null),
+        usageError: a.usageError ?? null,
         resetAt: preferred?.resetAt ?? (hasStoredWindows ? null : a.resetAt ?? null),
         usageWindows
       };

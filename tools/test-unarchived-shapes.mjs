@@ -18,7 +18,11 @@ const SHAPES = {
   "historical destructured": "case`thread/unarchived`:{let{threadId:q}=r.params;t.handle(q)}",
 };
 
-const bundle = (unarchived) => `let x=1;${STARTED}${unarchived ?? ""}${CREATE_GUARD}`;
+// The patch now resolves the creation function through its AST to pass the
+// selected model into routing. Keep the notification fixtures in valid JS.
+const bundle = (unarchived) =>
+  `async function create(mode){if(!mode)${CREATE_GUARD}return send({collaborationMode:mode});}` +
+  `function dispatch(r){switch(r.method){${STARTED}${unarchived ?? ""}}}`;
 
 let failures = 0;
 
@@ -35,7 +39,7 @@ for (const [label, unarchived] of Object.entries(SHAPES)) {
   try {
     const out = patch.apply(bundle(unarchived));
     const hooks = (out.match(/__cxpLearnThread\?\.\(/g) ?? []).length;
-    const autoRoute = out.includes(`${CREATE_GUARD}await globalThis.__cxpAutoRoute?.();`);
+    const autoRoute = out.includes(`${CREATE_GUARD}await globalThis.__cxpAutoRoute?.(mode?.settings?.model);`);
     if (out.includes(patch.marker) && hooks === 2 && autoRoute) {
       pass(label, `learnThread hooks = 2, autoRoute injected`);
     } else {

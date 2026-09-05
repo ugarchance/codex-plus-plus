@@ -8,7 +8,13 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -24,13 +30,22 @@ jobs:
 
       - name: Syntax check JS files
         run: |
-          find patch hub tools -type f \( -name "*.mjs" -o -name "*.cjs" \) -not -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
+          find patch hub tools -type f \( -name "*.mjs" -o -name "*.cjs" -o -name "*.js" \) -not -path "*/node_modules/*" -print0 | xargs -0 -n 1 node --check
 
       - name: Patch 090 thread/unarchived shape cases
         run: node tools/test-unarchived-shapes.mjs
 
       - name: Test apply.mjs --help (expect exit code 0)
         run: node patch/apply.mjs --help
+
+      - name: Test desktop update compatibility behavior
+        run: |
+          node tools/test-auth-refresh.mjs
+          node tools/test-windows-integrity.mjs
+          node tools/test-app-server-restore.mjs
+          node tools/test-usage-windows.cjs
+          node --test tools/test-usage-refresh.cjs
+          node --test tools/test-providers.cjs
 
       - name: Test apply.mjs --bogus-arg (expect non-zero exit code)
         run: |

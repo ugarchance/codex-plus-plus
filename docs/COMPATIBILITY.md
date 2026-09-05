@@ -11,6 +11,7 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 | Windows (`win32`) | `26.818.41509` | `26.818.5229.0` | `c5d839bc9b122b7ef2a2f0f45186b3e5895923de5b6cef5253c936fe670c0479` | 2026-08-23 | Windows Store package; internal Electron app version shown in the version column |
 | Windows (`win32`) | `26.820.71523` | `26.820.9563.0` | `e353c580ef4939d36f4ae32a35c896d089205c1d06b9f711cf78ffa4a3578a8a` | 2026-08-27 | Windows Store package; local CDP smoke passed |
 | macOS (`darwin`) | `26.825.51511` | `7377` | `f56ac8d5254a10fc4a04e7417fa787d135c3bbca49bad7d668d4ae65833d40c7` | 2026-08-30 | macOS official release; live CDP smoke passed (account menu, cards/bars usage view, account switch) |
+| Windows (`win32`) | `26.901.41600` | `26.901.5280.0` | `6579c4326cccdb508d079ecc878ad4725451b2234370d2ed9d4db53939cf99c7` | 2026-09-05 | Astra, account/reset UI, inline providers, model selection, scrolling, live Go tools and quota refresh verified; see [evidence and limits](provider-tools-and-usage-0905.md) |
 
 ## Rules
 

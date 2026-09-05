@@ -6,6 +6,7 @@ const usage = require("./usage.cjs");
 const accounts = require("./accounts.cjs");
 const profile = require("./profile.cjs");
 const routing = require("./routing.cjs");
+require("./provider-main.cjs");
 
 function guard(label, handler) {
   return async (...args) => {
