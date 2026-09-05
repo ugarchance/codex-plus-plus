@@ -85,11 +85,21 @@ ordinary code under `hub/`.
 | 010 | `webview/assets/app-initial-*.js` | anchor | answer the refresh request |
 | 020 | `.vite/build/early-bootstrap.js` | append | start the hub and disable the in-app updater (`CODEX_SPARKLE_ENABLED=false`) |
 | 030 | `.vite/build/preload.js` | append | expose `__codexpp` to the renderer |
-| 040 | `webview/assets/app-initial-*.js` | anchor | account block in the profile menu |
+| 040 | `webview/assets/app-*.js` + select | anchor | account block in the profile menu |
 | 050 | `.vite/build/bootstrap-*.js` | anchor | skip the `setPath('userData')` call |
 | 060 | `webview/assets/app-initial-*.js` | anchor | register the app-server client |
 | 070 | `webview/assets/app-initial-*.js` | anchor | normalise `authMode` in the renderer |
-| 080 | `.vite/build/src-*.js` | anchor | attach the auth token in the main process |
+| 080 | `.vite/build/src-*.js` | anchor | attach the auth token or verify equivalent upstream gates |
+| 090 / 091 | `webview/assets/app-initial-*.js` | anchor | routing, thread ownership and quota notifications |
+| 092 / 101 | `webview/assets/app-*.js` + select | anchor | quota banner and reset-credit selector |
+| 100 / 110 | `.vite/build/preload.js` | append | reset-credit and profile bridges |
+| 111 | `webview/assets/app-initial-*.js` | anchor | profile avatar stack |
+
+In 26.901, account/usage/banner UI moved into `app-primary`, while the client
+and notification listener remain in `app-initial`. Each UI patch selects its
+chunk by an i18n constant. Cross-chunk routing helpers live on `globalThis`.
+On Windows, `patch/windows-integrity.mjs` updates the copied executable's
+embedded ASAR hash after packaging, retaining validation against the new archive.
 
 Files 020 and 030 have **unhashed** names — `package.json`'s `main` field calls
 `early-bootstrap.js` by name — so no anchor search is needed; appending at the
@@ -109,7 +119,8 @@ Patches 070 and 080 exist because the auth mode leaks into UI decisions. The
 renderer reads `authMode` from `account/updated` and the main process attaches
 its bearer token only when `authMethod === "chatgpt"`; without normalising
 `chatgptAuthTokens` in both places the app drops to the sign-in screen a few
-seconds after a switch.
+seconds after a switch. In 26.901 the main process already accepts both modes;
+080 checks the two native gates and retains its legacy transform for older builds.
 
 `preload.js` runs with `contextIsolation` on, so the renderer is reached
 through `contextBridge.exposeInMainWorld`. The existing bridge is
@@ -188,7 +199,15 @@ Two constraints:
 - Built-in provider ids are protected: *"Built-in providers cannot be
   overridden."* Custom providers need their own names.
 
-The model list is fed through `model_catalog_json`.
+The engine supports `model_catalog_json`. The Windows 26.901 integration instead
+merges enabled external rows at the desktop request-client `model/list` boundary.
+`hub/provider-gateway.cjs` supplies per-thread `cxp-external` config without
+rewriting the user's shared config. `hub/providers.cjs` holds encrypted
+connections, model capabilities and pinned routes; `provider-wire.cjs` translates
+streaming protocols and tool history. Patch 122 mounts the compact UI inside the
+existing Settings content and adds its native navigation row below Analytics.
+Its shadow root keeps provider styles out of the desktop shell. See
+[provider contracts and limits](docs/providers.md).
 
 ## Collecting credentials
 

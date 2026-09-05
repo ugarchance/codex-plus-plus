@@ -252,27 +252,27 @@ const helpers = [
   `})();`
 ].join("\n");
 
-const DPR_ANCHOR = "t.params.error.codexErrorInfo===`usageLimitExceeded`&&";
+const DPR_PATTERN = `(${NAME})\\.params\\.error\\.codexErrorInfo===\`usageLimitExceeded\`&&`;
 
 const BANNER_ID = "codex.upsellBanner.plus.headline.noReset";
 const BANNER_WINDOW = 20000;
 
 const Z0S_RETURN_PATTERN =
-  `t\\[(\\d+)\\]=(${NAME})\\):\\2=t\\[\\1\\],\\2\\}` +
+  `(${NAME})\\[(\\d+)\\]=(${NAME})\\):\\3=\\1\\[\\2\\],\\3\\}` +
   `function (${NAME})\\((${NAME})\\)\\{let ${NAME}=\\(0,${NAME}\\.c\\)\\(\\d+\\),`;
 
-export default {
-  id: "091-rate-limit-failover",
-  description: "One-click switch to an eligible account without persisting transient limits",
-  glob: "webview/assets/app-initial-*.js",
-  marker: MARKER,
+export const bannerPatch = {
+  id: "092-rate-limit-banner",
+  description: "One-click switch to an eligible account in the rate limit banner",
+  glob: "webview/assets/app-*.js",
+  select: "codex.upsellBanner.plus.headline.noReset",
+  marker: FAILOVER_CARD,
   apply(source) {
-    matchOnce(source, DPR_ANCHOR.replace(/[`()${}]/g, "\\$&"), "dpr usageLimitExceeded listener");
     const bannerId = matchOnce(source, BANNER_ID.replace(/[.]/g, "\\."), "upsell banner i18n id");
     const bannerWindow = source.slice(bannerId.index, bannerId.index + BANNER_WINDOW);
     const z0sMatch = matchOnce(bannerWindow, Z0S_RETURN_PATTERN, "Z0s return statement");
 
-    const returnVar = z0sMatch[2];
+    const returnVar = z0sMatch[3];
     const z0sIndex = bannerId.index + z0sMatch.index;
 
     // Scan window around Z0s to extract JSX namespace
@@ -304,7 +304,7 @@ export default {
       headPart.slice(0, tailIndex) +
       `,(0,${jsx}.jsx)(${FAILOVER_CARD},{original:${returnVar}})}`;
 
-    let patched =
+    const patched =
       source.slice(0, z0sIndex) +
       headWrapped +
       "\n" +
@@ -312,7 +312,19 @@ export default {
       "\n" +
       nextFnPart +
       source.slice(z0sIndex + z0sMatch[0].length);
+    return patched;
+  }
+};
 
-    return `${helpers}\n${patched}`;
+export default {
+  id: "091-rate-limit-failover",
+  description: "Preserve native quota handling without persisting transient ineligibility",
+  glob: "webview/assets/app-initial-*.js",
+  marker: MARKER,
+  apply(source) {
+    // Keep a compatibility marker and validate the protocol anchor, while leaving
+    // native error handling intact. Patch 092 supplies the transient failover UI.
+    matchOnce(source, DPR_PATTERN, "usageLimitExceeded listener");
+    return `${helpers}\n${source}`;
   }
 };

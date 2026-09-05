@@ -1,4 +1,5 @@
 import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
+import { functionAt } from "../lib/ast.mjs";
 
 /**
  * Patch 090: Auto-routing Core
@@ -15,8 +16,10 @@ const MARKER = "_cxpAutoRoutingCore";
 const helpers = [
   `;(()=>{`,
   `  const ${MARKER} = true;`,
-  `  globalThis.__cxpLearnThread = (_threadId) => {`,
+  `  globalThis.__cxpLearnThread = async (_threadId, _model, _provider) => {`,
+  `    if (_model?.startsWith('cxp/') || _provider === 'cxp-external') return;`,
   `    try {`,
+  `      if (await globalThis.__cxpProviderCall?.('route', _threadId)) return;`,
   `      const _api = globalThis.__codexpp;`,
   `      if (!_api || !_threadId) return;`,
   `      const _view = _api.accountsSync?.();`,
@@ -26,7 +29,8 @@ const helpers = [
   `      }`,
   `    } catch {}`,
   `  };`,
-  `  globalThis.__cxpAutoRoute = async () => {`,
+  `  globalThis.__cxpAutoRoute = async (_model) => {`,
+  `    if (_model?.startsWith('cxp/')) return null;`,
   `    try {`,
   `      const _api = globalThis.__codexpp;`,
   `      if (!_api) return null;`,
@@ -57,9 +61,9 @@ const UNARCHIVED_PATTERN =
 
 const ANCHOR_CREATE = "throw Error(`Durable side conversations must start on a local host`);";
 const UNARCHIVED_DIRECT_PATTERN =
-  "case`thread/unarchived`:(" + NAME + ")\\.handleThreadUnarchived\\(Il\\((" + NAME + ")\\.params\\.threadId\\)\\);";
+  "case`thread/unarchived`:(" + NAME + ")\\.handleThreadUnarchived\\((?:" + NAME +
+  "\\()?(" + NAME + ")\\.params\\.threadId";
 
-const REPLACEMENT_CREATE = ANCHOR_CREATE + "await globalThis.__cxpAutoRoute?.();";
 
 export default {
   id: "090-auto-routing-core",
@@ -89,7 +93,7 @@ export default {
     const [startedText, thread, startedParams, conversation, receiver] = started;
     const startedReplacement =
       "case`thread/started`:{let{thread:" + thread + "}=" + startedParams + ".params;" +
-      "globalThis.__cxpLearnThread?.(" + thread + "?.id);" +
+      "globalThis.__cxpLearnThread?.(" + thread + "?.id," + thread + "?.model," + thread + "?.modelProvider);" +
       "let " + conversation + "=" + receiver + ".upsertConversationFromThread(" + thread + ");";
 
     const [unarchivedText] = unarchived;
@@ -109,7 +113,9 @@ export default {
 
     let patched = replaceOnce(source, startedText, startedReplacement);
     patched = replaceOnce(patched, unarchivedText, unarchivedReplacement);
-    patched = replaceOnce(patched, ANCHOR_CREATE, REPLACEMENT_CREATE);
+    const createFn = functionAt(source, "Durable side conversations must start on a local host");
+    const [, collaboration] = matchOnce(source.slice(createFn.start, createFn.end), `collaborationMode:(${NAME})`, "thread creation model settings");
+    patched = replaceOnce(patched, ANCHOR_CREATE, ANCHOR_CREATE + `await globalThis.__cxpAutoRoute?.(${collaboration}?.settings?.model);`);
 
     return `${helpers}\n${patched}`;
   }

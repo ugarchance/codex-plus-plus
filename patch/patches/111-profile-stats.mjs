@@ -56,7 +56,7 @@ function block({ jsx, react }) {
   ].join("\n");
 }
 
-const PROPS_PATTERN = `\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME}),username:(${NAME})\\}`;
+const PROPS_PATTERN = `\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME}),username:(${NAME})(?:,usernameTextSizeClassName:${NAME})?\\}`;
 
 export default {
   id: "111-profile-stats",

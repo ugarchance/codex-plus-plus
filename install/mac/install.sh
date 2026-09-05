@@ -6,6 +6,7 @@ DEST_APP="${DEST_APP:-/Applications/Codex++.app}"
 BUNDLE_ID="${BUNDLE_ID:-com.local.codexpp}"
 APP_NAME="Codex++"
 USER_DATA_DIR="${USER_DATA_DIR:-$HOME/Library/Application Support/CodexPP}"
+ALLOW_UNTESTED_SOURCE="${ALLOW_UNTESTED_SOURCE:-}"
 CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -69,9 +70,14 @@ apply_patches() {
     info "installing patch dependencies"
     npm --prefix "$REPO_DIR/patch" install --no-audit --no-fund
   fi
-  node "$REPO_DIR/patch/apply.mjs" \
-       --src "$SRC_APP/Contents/Resources/app.asar" \
-       --out "$DEST_APP/Contents/Resources/app.asar"
+  local patch_args=(
+    --src "$SRC_APP/Contents/Resources/app.asar"
+    --out "$DEST_APP/Contents/Resources/app.asar"
+  )
+  if [ -n "${ALLOW_UNTESTED_SOURCE:-}" ]; then
+    patch_args+=(--allow-untested-source)
+  fi
+  node "$REPO_DIR/patch/apply.mjs" "${patch_args[@]}"
 }
 
 install_hub() {
@@ -79,6 +85,16 @@ install_hub() {
   local res="$DEST_APP/Contents/Resources"
   rm -rf "$res/hub"
   cp -R "$REPO_DIR/hub" "$res/hub"
+}
+
+install_claude_peers() {
+  if [ -n "${SKIP_CLAUDE_PEERS:-}" ]; then
+    info "skipping claude-peers (SKIP_CLAUDE_PEERS set)"
+    return 0
+  fi
+  info "registering claude-peers MCP server"
+  node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEX_HOME_SHARED" \
+    || echo "    ! claude-peers registration failed, continuing"
 }
 
 edit_plist() {
@@ -154,6 +170,9 @@ summary() {
   echo "  bundle id   : $BUNDLE_ID"
   echo "  user data   : $USER_DATA_DIR"
   echo "  CODEX_HOME  : $CODEX_HOME_SHARED  (shared with the original)"
+  if [ -z "${SKIP_CLAUDE_PEERS:-}" ]; then
+    echo "  claude-peers: $CODEX_HOME_SHARED/mcp/claude-peers  (Claude sessions as Codex tools)"
+  fi
   echo
   echo "  run: open -a \"$DEST_APP\""
 }
@@ -165,6 +184,7 @@ case "${1:-install}" in
     install_launcher
     apply_patches
     install_hub
+    install_claude_peers
     edit_plist
     write_entitlements
     sign_bundle
@@ -176,6 +196,8 @@ case "${1:-install}" in
   uninstall)
     info "removing: $DEST_APP"
     rm -rf "$DEST_APP"
+    node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEX_HOME_SHARED" --remove \
+      || echo "    ! claude-peers removal failed"
     echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;
   *)

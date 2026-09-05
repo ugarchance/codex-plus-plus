@@ -29,6 +29,7 @@ const HEAD_PATTERN =
   ",onOpenSettings:" + NAME +
   ",onOpenWorkspaceSettings:" + NAME +
   ",onTogglePet:" + NAME +
+  "(?:,personalPlanLabel:" + NAME + ",petShortcut:" + NAME + ")?" +
   ",settingsShortcut:" + NAME +
   `,usageItems:(${NAME})` +
   ",workspaceSettingsRightIcon:" + NAME +
@@ -148,7 +149,7 @@ function block({ jsx, menu, item, react }) {
     `const[_hover,_setHover]=(0,${react}.useState)(!1);`,
     "const _a=_p.account,_windows=_cxpWindows(_a),_summaryEntry=_windows.find(_v=>_v.kind===`weekly`)??_windows[0]??null,_summaryWindow=_summaryEntry?.window,_left=_cxpLeft(_summaryWindow?.usedPercent??_a.usedPercent),_plan=_cxpPlan(_a.planType);",
     "const _ineligible=_a.planType===`free`||_a.planType===`go`||Boolean(_p.routing?.learnedIneligible?.[_a.id]);",
-    "const _sub=_ineligible?(_a.email?`${_a.email} · Not eligible`:`Not eligible`):_a.email??null;",
+    "const _sub=_a.usageError?[_a.email,_a.usageError].filter(Boolean).join(` · `):_ineligible?(_a.email?`${_a.email} · Not eligible`:`Not eligible`):_a.email??null;",
     `const _exit=(0,${jsx}.jsx)(\`span\`,{role:\`button\`,title:\`Log out\`,`,
     "className:`flex items-center rounded-sm transition-opacity`,",
     "style:{opacity:_hover?1:.45},",
@@ -223,7 +224,8 @@ function block({ jsx, menu, item, react }) {
 export default {
   id: "040-account-menu",
   description: "Account list, per-account usage, auto-routing toggle, eligibility badge and switching in profile menu",
-  glob: "webview/assets/app-initial-*.js",
+  glob: "webview/assets/app-*.js",
+  select: "codex.profileDropdown.settingsPage",
   marker: BLOCK,
   apply(source) {
     const head = matchOnce(source, HEAD_PATTERN, "profile menu component");

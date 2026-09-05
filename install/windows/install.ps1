@@ -17,7 +17,8 @@ param(
   [string]$DataDir = "$env:LOCALAPPDATA\CodexPP",
   [string]$AppName = "Codex++",
   [switch]$NoDesktopShortcut,
-  [switch]$AllowUntestedSource
+  [switch]$AllowUntestedSource,
+  [switch]$SkipClaudePeers
 )
 
 $ErrorActionPreference = "Stop"
@@ -76,12 +77,10 @@ function Invoke-Patch {
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Die "node not found. Node.js required: https://nodejs.org"
   }
-  if (-not (Test-Path "$RepoRoot\patch\node_modules")) {
-    Info "installing patch dependencies"
-    Push-Location "$RepoRoot\patch"
-    try { npm install --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "npm install failed" } }
-    finally { Pop-Location }
-  }
+  Info "installing locked patch dependencies"
+  Push-Location "$RepoRoot\patch"
+  try { npm ci --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "npm ci failed" } }
+  finally { Pop-Location }
   $patchArgs = @(
     "$RepoRoot\patch\apply.mjs",
     "--src", "$SrcApp\resources\app.asar",
@@ -92,6 +91,8 @@ function Invoke-Patch {
   }
   & node @patchArgs
   if ($LASTEXITCODE -ne 0) { Die "patching failed" }
+  & node "$RepoRoot\patch\windows-integrity.mjs" "$DestDir\ChatGPT.exe" "$SrcApp\resources\app.asar" "$DestDir\resources\app.asar"
+  if ($LASTEXITCODE -ne 0) { Die "Windows ASAR integrity update failed" }
 }
 
 function Install-Hub {
@@ -99,6 +100,19 @@ function Install-Hub {
   $hub = "$DestDir\resources\hub"
   if (Test-Path $hub) { Remove-Item $hub -Recurse -Force }
   Copy-Item "$RepoRoot\hub" $hub -Recurse
+}
+
+function Install-ClaudePeers {
+  if ($SkipClaudePeers) {
+    Info "skipping claude-peers (-SkipClaudePeers)"
+    return
+  }
+  Info "registering claude-peers MCP server"
+  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+  & node "$RepoRoot\integrations\claude-peers\install.mjs" --codex-home $codexHome
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "    ! claude-peers registration failed, continuing" -ForegroundColor Yellow
+  }
 }
 
 function New-Shortcut([string]$Path) {
@@ -131,6 +145,7 @@ if (-not (Test-Path "$SrcApp\ChatGPT.exe")) {
 Copy-App
 Invoke-Patch
 Install-Hub
+Install-ClaudePeers
 Install-Shortcuts
 
 Write-Host ""
@@ -139,6 +154,9 @@ Write-Host ""
 Write-Host "  app        : $DestDir"
 Write-Host "  user data  : $DataDir  (private; the store app keeps its own)"
 Write-Host "  CODEX_HOME : $env:USERPROFILE\.codex  (shared with the original)"
+if (-not $SkipClaudePeers) {
+  Write-Host "  claude-peers: $env:USERPROFILE\.codex\mcp\claude-peers  (Claude sessions as Codex tools)"
+}
 Write-Host ""
 Write-Host "  start it from the Start Menu (`"$AppName`")"
 Write-Host "  after a store update re-run this script to refresh the copy"

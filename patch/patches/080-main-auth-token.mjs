@@ -10,8 +10,15 @@ export default {
   description: "Let the main process attach the auth token when the host supplies the ChatGPT session",
   glob: ".vite/build/src-*.js",
   select: "app_server_connection.auth_status_result",
-  marker: "chatgptAuthTokens",
+  marker: "/*__cxpMainAuthTokenVerified*/",
   apply(source) {
+    const upstream = new RegExp(
+      `(${NAME})\\?\\.authMethod===\`chatgpt\`\\|\\|\\1\\?\\.authMethod===\`chatgptAuthTokens\`\\?\\1\\.authToken\\?\\?null:null`, "g"
+    );
+    const nativeMatches = [...source.matchAll(upstream)];
+    if (nativeMatches.length === 2 && [...source.matchAll(PATTERN)].length === 0) {
+      return "/*__cxpMainAuthTokenVerified*/\n" + source;
+    }
     const matches = [...source.matchAll(PATTERN)];
     if (matches.length !== 2) {
       throw new Error(`auth token gate had to match twice, matched ${matches.length} times`);
@@ -27,6 +34,6 @@ export default {
         `?${response}.authToken??null:null`;
       cursor = match.index + match[0].length;
     }
-    return result + source.slice(cursor);
+    return "/*__cxpMainAuthTokenVerified*/\n" + result + source.slice(cursor);
   }
 };

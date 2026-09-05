@@ -161,6 +161,11 @@ theorising about React.
 
 ## Verification
 
+After a Codex update, start with `node tools/check-patches.mjs`. It applies
+every patch to the installed `app.asar` in isolation and prints one line per
+patch, so a broken anchor is named directly — `apply.mjs` stops at the first
+failure and tells you nothing about the ones behind it.
+
 Applying the patch is not enough on its own:
 
 - `node --check`, or parse with acorn, for syntax

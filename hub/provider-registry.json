@@ -1,0 +1,3231 @@
+{
+  "version": 1,
+  "source": "duolahypercho/codex-router",
+  "revision": "0f8441fb4a7152f4b70a4ac1709f4311f4cdde30",
+  "updatedAt": 1788604955854,
+  "providers": {
+    "anthropic-api": {
+      "id": "anthropic-api",
+      "name": "Anthropic API",
+      "endpoint": "https://api.anthropic.com/v1",
+      "protocol": "anthropic",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "claude-opus-4-8",
+          "label": "Claude Opus 4.8 (API)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "anthropic-reasoning"
+        }
+      ]
+    },
+    "cerebras": {
+      "id": "cerebras",
+      "name": "Cerebras",
+      "endpoint": "https://api.cerebras.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "chatgpt-web": {
+      "id": "chatgpt-web",
+      "name": "ChatGPT Web",
+      "endpoint": "http://127.0.0.1:17841/v1",
+      "protocol": "responses",
+      "local": true,
+      "opencode": false,
+      "supported": false,
+      "note": "Bu bağlantı türü için özel kimlik/protokol adaptörü gerekiyor.",
+      "models": []
+    },
+    "chutes": {
+      "id": "chutes",
+      "name": "Chutes",
+      "endpoint": "https://llm.chutes.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "clinepass": {
+      "id": "clinepass",
+      "name": "ClinePass",
+      "endpoint": "https://api.cline.bot/api/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "Requires an active ClinePass subscription.",
+      "models": [
+        {
+          "id": "cline-pass/deepseek-v4-flash",
+          "label": "DeepSeek V4 Flash (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/glm-5.2",
+          "label": "GLM-5.2 (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "tencent/hy4-preview",
+          "label": "Hy4 Preview (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/kimi-k2.6",
+          "label": "Kimi K2.6 (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/kimi-k2.7-code",
+          "label": "Kimi K2.7 Code (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/kimi-k3",
+          "label": "Kimi K3 (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/mimo-v2.5-pro",
+          "label": "MiMo-V2.5-Pro (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/mimo-v2.5",
+          "label": "MiMo-V2.5 (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/minimax-m3",
+          "label": "MiniMax M3 (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/qwen3.7-max",
+          "label": "Qwen3.7 Max (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/qwen3.7-plus",
+          "label": "Qwen3.7 Plus (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        },
+        {
+          "id": "cline-pass/qwen3.8-max",
+          "label": "Qwen3.8 Max (ClinePass)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "clinepass"
+        }
+      ]
+    },
+    "commandcode": {
+      "id": "commandcode",
+      "name": "Command Code",
+      "endpoint": "https://api.commandcode.ai/provider/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "Every Command Code plan except Go includes Provider API access; GOAT, Pro, Max, Team, and Provider accounts use this API and meter against their own credits.",
+      "models": [
+        {
+          "id": "deepseek/deepseek-v4-flash",
+          "label": "DeepSeek V4 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "deepseek/deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "sakana/fugu-ultra",
+          "label": "Fugu Ultra (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.5-flash",
+          "label": "Gemini 3.5 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.7-flash",
+          "label": "Gemini 3.7 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.8-flash",
+          "label": "Gemini 3.8 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "zai-org/GLM-5.2-Fast",
+          "label": "GLM-5.2 Fast (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "zai-org/GLM-5.2",
+          "label": "GLM-5.2 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "z-ai/glm-5.3-flash",
+          "label": "GLM-5.3-Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "zai-org/GLM-5.3",
+          "label": "GLM-5.3 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "gpt-5.5",
+          "label": "GPT 5.5 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 200000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT 5.6 Luna (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "label": "GPT 5.6 Sol (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "label": "GPT 5.6 Terra (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "xai/grok-4.5",
+          "label": "Grok 4.5 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "xai/grok-4.6",
+          "label": "Grok 4.6 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "tencent/hy3-paid",
+          "label": "Hy3 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "tencent/hy4-preview",
+          "label": "Hy4 Preview (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "thinkingmachines/inkling-small",
+          "label": "Inkling Small (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "thinkingmachines/inkling",
+          "label": "Inkling (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 256000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "moonshotai/Kimi-K2.7-Code-Highspeed",
+          "label": "Kimi K2.7 Code HighSpeed (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "moonshotai/Kimi-K2.7-Code",
+          "label": "Kimi K2.7 Code (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 256000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "moonshotai/Kimi-K3",
+          "label": "Kimi K3 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "kimi-k3"
+        },
+        {
+          "id": "poolside/laguna-s-2.1-free",
+          "label": "Laguna S 2.1 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 256000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-fable-5-1",
+          "label": "Claude Fable 5.1 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-fable-5",
+          "label": "Claude Fable 5 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "label": "Claude Haiku 4.5 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 200000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-opus-4-8",
+          "label": "Claude Opus 4.8 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-opus-5",
+          "label": "Claude Opus 5 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "claude-sonnet-5",
+          "label": "Claude Sonnet 5 (Command Code)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "xiaomi/mimo-v2.5-pro",
+          "label": "MiMo-V2.5-Pro (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "MiniMaxAI/MiniMax-M2.7",
+          "label": "MiniMax M2.7 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 200000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "MiniMaxAI/MiniMax-M3",
+          "label": "MiniMax M3 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "meta/muse-spark-1.2",
+          "label": "Muse Spark 1.2 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "nvidia/nemotron-3-ultra-550b-a55b",
+          "label": "Nemotron 3 Ultra (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.7-Flash",
+          "label": "Qwen3.7 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.7-Max",
+          "label": "Qwen3.7 Max (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.7-Plus",
+          "label": "Qwen3.7 Plus (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.8-Flash",
+          "label": "Qwen3.8 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.8-Max-0902",
+          "label": "Qwen3.8 Max 0902 (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "Qwen/Qwen3.8-Max",
+          "label": "Qwen3.8 Max (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "stepfun/Step-3.7-Flash",
+          "label": "Step 3.7 Flash (Command Code)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 256000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        }
+      ]
+    },
+    "deepseek": {
+      "id": "deepseek",
+      "name": "DeepSeek API",
+      "endpoint": "https://api.deepseek.com",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "deepseek-chat",
+          "label": "deepseek-chat",
+          "protocol": "chat",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 32768,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "deepseek-nonthinking"
+        },
+        {
+          "id": "deepseek-reasoner",
+          "label": "deepseek-reasoner",
+          "protocol": "chat",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 32768,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "deepseek-thinking"
+        },
+        {
+          "id": "deepseek-v4-flash",
+          "label": "DeepSeek V4 Flash (API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "deepseek-thinking"
+        },
+        {
+          "id": "deepseek-v4-flash-vision-exp",
+          "label": "DeepSeek V4 Flash Vision Exp (API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "deepseek-thinking"
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (API)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "deepseek-thinking"
+        }
+      ]
+    },
+    "fireworks": {
+      "id": "fireworks",
+      "name": "Fireworks AI",
+      "endpoint": "https://api.fireworks.ai/inference/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "gemini-api": {
+      "id": "gemini-api",
+      "name": "Google Gemini API",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "github-copilot": {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "endpoint": "https://api.individual.githubcopilot.com",
+      "protocol": "responses",
+      "local": false,
+      "opencode": false,
+      "supported": false,
+      "note": "Bu bağlantı türü için özel kimlik/protokol adaptörü gerekiyor.",
+      "models": []
+    },
+    "grok-api": {
+      "id": "grok-api",
+      "name": "xAI Grok API",
+      "endpoint": "https://api.x.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "grok-4.5",
+          "label": "Grok 4.5 (API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "xai-reasoning"
+        }
+      ]
+    },
+    "groq": {
+      "id": "groq",
+      "name": "Groq",
+      "endpoint": "https://api.groq.com/openai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "huggingface": {
+      "id": "huggingface",
+      "name": "Hugging Face Router",
+      "endpoint": "https://router.huggingface.co/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "kilo-free": {
+      "id": "kilo-free",
+      "name": "Kilo Free",
+      "endpoint": "https://api.kilo.ai/api/gateway",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "kimi-api": {
+      "id": "kimi-api",
+      "name": "Kimi Platform API (Global)",
+      "endpoint": "https://api.moonshot.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "kimi-k3",
+          "label": "Kimi K3 (API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "kimi-k3"
+        }
+      ]
+    },
+    "kimi-api-cn": {
+      "id": "kimi-api-cn",
+      "name": "Kimi Platform API (China)",
+      "endpoint": "https://api.moonshot.cn/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "Keys are not interchangeable with the global platform: create this one at platform.moonshot.cn.",
+      "models": [
+        {
+          "id": "kimi-k3",
+          "label": "Kimi K3 (China API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "kimi-k3"
+        }
+      ]
+    },
+    "lmstudio": {
+      "id": "lmstudio",
+      "name": "LM Studio (Local)",
+      "endpoint": "http://127.0.0.1:1234/v1",
+      "protocol": "chat",
+      "local": true,
+      "opencode": false,
+      "supported": true,
+      "note": "Runs on this machine. Start the LM Studio local server before using these models.",
+      "models": []
+    },
+    "local": {
+      "id": "local",
+      "name": "Local (Ollama)",
+      "endpoint": "http://127.0.0.1:11434/v1",
+      "protocol": "chat",
+      "local": true,
+      "opencode": false,
+      "supported": true,
+      "note": "Runs on this machine. Start Ollama before using these models.",
+      "models": []
+    },
+    "meta": {
+      "id": "meta",
+      "name": "Meta API",
+      "endpoint": "https://api.meta.ai/v1",
+      "protocol": "responses",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "muse-spark-1.1",
+          "label": "Muse Spark 1.1 (Meta)",
+          "protocol": "responses",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "muse-spark-1.2-contributor",
+          "label": "Muse Spark 1.2 Contributor (Meta)",
+          "protocol": "responses",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "muse-spark-1.2",
+          "label": "Muse Spark 1.2 (Meta)",
+          "protocol": "responses",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        }
+      ]
+    },
+    "minimax-token-plan": {
+      "id": "minimax-token-plan",
+      "name": "MiniMax Token Plan",
+      "endpoint": "https://api.minimax.io/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "MiniMax-M3",
+          "label": "MiniMax M3",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "minimax-m3"
+        }
+      ]
+    },
+    "mistral": {
+      "id": "mistral",
+      "name": "Mistral AI",
+      "endpoint": "https://api.mistral.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "nano-gpt": {
+      "id": "nano-gpt",
+      "name": "NanoGPT",
+      "endpoint": "https://nano-gpt.com/api/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "tencent/hy4-preview",
+          "label": "Hy4 Preview (NanoGPT)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "hy4-reasoning"
+        }
+      ]
+    },
+    "nousresearch": {
+      "id": "nousresearch",
+      "name": "Nous Research (Hermes)",
+      "endpoint": "https://inference-api.nousresearch.com/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "anthropic/claude-fable-5.1",
+          "label": "Claude Fable 5.1 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "anthropic/claude-fable-5",
+          "label": "Claude Fable 5 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "anthropic/claude-opus-5",
+          "label": "Claude Opus 5 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "anthropic/claude-sonnet-5",
+          "label": "Claude Sonnet 5 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "deepseek/deepseek-v4-flash",
+          "label": "DeepSeek V4 Flash (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "deepseek/deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.7-flash",
+          "label": "Gemini 3.7 Flash (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.8-flash",
+          "label": "Gemini 3.8 Flash (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "z-ai/glm-5.2",
+          "label": "GLM-5.2 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "z-ai/glm-5.3",
+          "label": "GLM-5.3 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "openai/gpt-5.6-terra",
+          "label": "GPT-5.6 Terra (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "x-ai/grok-4.6",
+          "label": "Grok 4.6 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "nousresearch/hermes-4-405b",
+          "label": "Hermes 4 405B (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 131072,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "nousresearch/hermes-4-70b",
+          "label": "Hermes 4 70B (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 131072,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "tencent/hy3:free",
+          "label": "Hy3 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "tencent/hy4-preview",
+          "label": "Hy4 Preview (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "hy4-reasoning"
+        },
+        {
+          "id": "kwaipilot/kat-coder-pro-v2.5",
+          "label": "Kat Coder Pro v2.5 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 256000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "moonshotai/kimi-k2.7-code",
+          "label": "Kimi K2.7 Code (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "moonshotai/kimi-k3",
+          "label": "Kimi K3 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "poolside/laguna-s-2.1:free",
+          "label": "Laguna S 2.1 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "poolside/laguna-xs-2.1:free",
+          "label": "Laguna XS 2.1 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "meituan/longcat-2.0:free",
+          "label": "LongCat 2.0 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "xiaomi/mimo-v2.5-pro",
+          "label": "MiMo v2.5 Pro (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1050000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "minimax/minimax-m3",
+          "label": "MiniMax M3 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "meta/muse-spark-1.2-contributor",
+          "label": "Muse Spark 1.2 Contributor (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "meta/muse-spark-1.3-contributor",
+          "label": "Muse Spark 1.3 Contributor (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "meta/muse-spark-1.3",
+          "label": "Muse Spark 1.3 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "nvidia/nemotron-3-ultra-550b-a55b",
+          "label": "Nemotron 3 Ultra (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 512288,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "qwen/qwen3.7-max",
+          "label": "Qwen 3.7 Max (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "qwen/qwen3.8-flash",
+          "label": "Qwen3.8 Flash (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "qwen/qwen3.8-max",
+          "label": "Qwen 3.8 Max (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "xhigh",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "upstage/solar-pro4:free",
+          "label": "Solar Pro 4 (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 524288,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "stepfun/step-3.7-flash:free",
+          "label": "Step 3.7 Flash (Nous Research)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        }
+      ]
+    },
+    "nvidia-nim": {
+      "id": "nvidia-nim",
+      "name": "NVIDIA NIM",
+      "endpoint": "https://integrate.api.nvidia.com/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "ollama-cloud": {
+      "id": "ollama-cloud",
+      "name": "Ollama Cloud",
+      "endpoint": "https://ollama.com/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "deepseek-v4-flash:cloud",
+          "label": "DeepSeek V4 Flash (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud"
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 524288,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud"
+        },
+        {
+          "id": "glm-5.2",
+          "label": "GLM-5.2 (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud"
+        },
+        {
+          "id": "glm-5.3-flash:cloud",
+          "label": "GLM-5.3-Flash (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud-glm-5-3-flash"
+        },
+        {
+          "id": "glm-5.3:cloud",
+          "label": "GLM-5.3 (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud-glm-5-3"
+        },
+        {
+          "id": "kimi-k2.7-code",
+          "label": "Kimi K2.7 Code (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud"
+        },
+        {
+          "id": "kimi-k3:cloud",
+          "label": "Kimi K3 (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud"
+        },
+        {
+          "id": "minimax-m3",
+          "label": "MiniMax M3 (Ollama Cloud)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 524288,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "ollama-cloud-auto-tool-choice"
+        }
+      ]
+    },
+    "opencode-go": {
+      "id": "opencode-go",
+      "name": "opencode Go/Zen",
+      "endpoint": "https://opencode.ai/zen/go/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": true,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "deepseek-v4-flash-vision-exp",
+          "label": "DeepSeek V4 Flash Vision Exp (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "deepseek-v4-flash",
+          "label": "DeepSeek V4 Flash (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "glm-5.1",
+          "label": "GLM-5.1 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "glm-5.2",
+          "label": "GLM-5.2 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "glm-5.3-flash",
+          "label": "GLM-5.3-Flash (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "ox-alpha"
+        },
+        {
+          "id": "glm-5.3",
+          "label": "GLM-5.3 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "glm-5",
+          "label": "GLM-5 (opencode Go, legacy)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 202752,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "hy3",
+          "label": "Hy3 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "hy4-preview",
+          "label": "Hy4 Preview (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1024000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "hy4-reasoning"
+        },
+        {
+          "id": "kimi-k2.5",
+          "label": "Kimi K2.5 (opencode Go, legacy)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "kimi-k2.6",
+          "label": "Kimi K2.6 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "kimi-k2.7-code",
+          "label": "Kimi K2.7 Code (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "kimi-k3",
+          "label": "Kimi K3 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "kimi-k3"
+        },
+        {
+          "id": "longcat-2.0",
+          "label": "LongCat-2.0 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "mimo-v2.5-pro",
+          "label": "MiMo-V2.5-Pro (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "mimo-v2.5",
+          "label": "MiMo-V2.5 (opencode Go)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "qwen3.5-plus",
+          "label": "Qwen3.5 Plus (opencode Go, legacy)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "minimax-m2.5",
+          "label": "MiniMax M2.5 (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 204800,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "minimax-m2.7",
+          "label": "MiniMax M2.7 (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 204800,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "minimax-m3",
+          "label": "MiniMax M3 (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "qwen3.6-plus",
+          "label": "Qwen3.6 Plus (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "qwen3.7-max",
+          "label": "Qwen3.7 Max (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "qwen3.7-plus",
+          "label": "Qwen3.7 Plus (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 262144,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "qwen3.8-flash",
+          "label": "Qwen3.8 Flash (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "qwen3.8-max",
+          "label": "Qwen3.8 Max (opencode Go)",
+          "protocol": "anthropic",
+          "efforts": [],
+          "defaultEffort": null,
+          "contextWindow": 262144,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT 5.6 Luna (opencode Go)",
+          "protocol": "responses",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 272000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "grok-4.5",
+          "label": "Grok 4.5 (opencode Go)",
+          "protocol": "responses",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "grok-4.6",
+          "label": "Grok 4.6 (opencode Go)",
+          "protocol": "responses",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "muse-spark-1.2-contributor",
+          "label": "Muse Spark 1.2 Contributor (opencode Go)",
+          "protocol": "responses",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "muse-spark-1.3-contributor",
+          "label": "Muse Spark 1.3 Contributor (opencode Go)",
+          "protocol": "responses",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        }
+      ]
+    },
+    "opencode-zen": {
+      "id": "opencode-zen",
+      "name": "opencode Zen",
+      "endpoint": "https://opencode.ai/zen/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": true,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "opencode-free": {
+      "id": "opencode-free",
+      "name": "OpenCode Free",
+      "endpoint": "https://opencode.ai/zen/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": true,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "openrouter": {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "endpoint": "https://openrouter.ai/api/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "anthropic/claude-fable-5.1",
+          "label": "Claude Fable 5.1 (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "google/gemini-3.8-flash",
+          "label": "Gemini 3.8 Flash (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "medium",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "z-ai/glm-5.3-flash",
+          "label": "GLM-5.3-Flash (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "ox-alpha"
+        },
+        {
+          "id": "z-ai/glm-5.3",
+          "label": "GLM-5.3 (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "x-ai/grok-4.6",
+          "label": "Grok 4.6 (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 500000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "tencent/hy4-preview",
+          "label": "Hy4 Preview (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "hy4-reasoning"
+        },
+        {
+          "id": "meta/muse-spark-1.2-contributor",
+          "label": "Muse Spark 1.2 Contributor (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "meta/muse-spark-1.2",
+          "label": "Muse Spark 1.2 (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "meta/muse-spark-1.3-contributor",
+          "label": "Muse Spark 1.3 Contributor (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "meta/muse-spark-1.3",
+          "label": "Muse Spark 1.3 (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": "auto-tool-choice"
+        },
+        {
+          "id": "qwen/qwen3.8-flash",
+          "label": "Qwen3.8 Flash (OpenRouter)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        }
+      ]
+    },
+    "orca": {
+      "id": "orca",
+      "name": "OrcaRouter",
+      "endpoint": "https://api.orcarouter.ai/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "qwen-plan": {
+      "id": "qwen-plan",
+      "name": "Qwen (Alibaba Plan)",
+      "endpoint": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "deepseek-v4-flash-0731",
+          "label": "DeepSeek V4 Flash (Qwen Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "deepseek-v4-pro-0813",
+          "label": "DeepSeek V4 Pro 0813 (Qwen Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (Qwen Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "glm-5.2",
+          "label": "GLM-5.2 (Qwen Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.6-flash",
+          "label": "Qwen3.6 Flash (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.7-max",
+          "label": "Qwen3.7 Max (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.7-plus",
+          "label": "Qwen3.7 Plus (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.8-flash",
+          "label": "Qwen3.8 Flash (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.8-max-preview",
+          "label": "Qwen3.8 Max Preview (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        },
+        {
+          "id": "qwen3.8-max",
+          "label": "Qwen3.8 Max (Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 983616,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "qwen-plan"
+        }
+      ]
+    },
+    "siliconflow": {
+      "id": "siliconflow",
+      "name": "SiliconFlow",
+      "endpoint": "https://api.siliconflow.cn/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "together": {
+      "id": "together",
+      "name": "Together AI",
+      "endpoint": "https://api.together.xyz/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": []
+    },
+    "venice": {
+      "id": "venice",
+      "name": "Venice",
+      "endpoint": "https://api.venice.ai/api/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "Venice API access needs a Pro account (the low-rate-limit Explorer tier), a USD balance, or staked VVV that grants VCU; a free Venice account has no API entitlement.",
+      "models": [
+        {
+          "id": "claude-fable-5-1",
+          "label": "Claude Fable 5.1 (Venice)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "gemini-3-8-flash",
+          "label": "Gemini 3.8 Flash (Venice)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "z-ai-glm-5-3",
+          "label": "GLM-5.3 (Venice)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        }
+      ]
+    },
+    "xiaomi-mimo": {
+      "id": "xiaomi-mimo",
+      "name": "Xiaomi MiMo API",
+      "endpoint": "https://api.xiaomimimo.com/v1",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "mimo-v2.5-pro",
+          "label": "MiMo-V2.5-Pro (Xiaomi API)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        },
+        {
+          "id": "mimo-v2.5",
+          "label": "MiMo-V2.5 (Xiaomi API)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 1048576,
+          "images": true,
+          "tools": true,
+          "enabled": false,
+          "supported": true,
+          "requestProfile": null
+        }
+      ]
+    },
+    "zai-coding": {
+      "id": "zai-coding",
+      "name": "Z.ai GLM Coding Plan",
+      "endpoint": "https://api.z.ai/api/coding/paas/v4",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "",
+      "models": [
+        {
+          "id": "glm-5-turbo",
+          "label": "GLM-5-Turbo (Coding Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 204800,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.2",
+          "label": "GLM-5.2 (Coding Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.3-flash",
+          "label": "GLM-5.3-Flash (Coding Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.3",
+          "label": "GLM-5.3 (Coding Plan)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        }
+      ]
+    },
+    "zai-api": {
+      "id": "zai-api",
+      "name": "Z.ai API",
+      "endpoint": "https://api.z.ai/api/paas/v4",
+      "protocol": "chat",
+      "local": false,
+      "opencode": false,
+      "supported": true,
+      "note": "The pay-per-token platform key is a different credential from the GLM Coding Plan key; a Coding Plan key is not billable on this endpoint.",
+      "models": [
+        {
+          "id": "glm-4.7",
+          "label": "GLM-4.7 (Z.ai API)",
+          "protocol": "chat",
+          "efforts": [
+            "high"
+          ],
+          "defaultEffort": "high",
+          "contextWindow": 200000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.2",
+          "label": "GLM-5.2 (Z.ai API)",
+          "protocol": "chat",
+          "efforts": [
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1048576,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.3-flash",
+          "label": "GLM-5.3-Flash (Z.ai API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        },
+        {
+          "id": "glm-5.3",
+          "label": "GLM-5.3 (Z.ai API)",
+          "protocol": "chat",
+          "efforts": [
+            "low",
+            "high",
+            "max"
+          ],
+          "defaultEffort": "max",
+          "contextWindow": 1000000,
+          "images": false,
+          "tools": true,
+          "enabled": false,
+          "supported": false,
+          "requestProfile": "glm-thinking"
+        }
+      ]
+    }
+  }
+}

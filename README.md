@@ -2,6 +2,12 @@
 
 Multiple ChatGPT subscriptions in one Codex desktop app.
 
+Windows 26.901 also includes **Settings → Providers**, directly below Analytics:
+multiple API connections, enabled models and efforts, and account usage in one
+compact settings pane. The provider catalog can be refreshed from codex-router;
+OpenCode Go and paid Zen remain separate connections. See the
+[provider setup and current adapter limits](docs/providers.md).
+
 Codex++ installs a second app next to the original — on macOS next to
 `ChatGPT.app`, on Windows as a per-user copy of the store-installed Codex app —
 without touching the original. Every subscription you connect shows up in the
@@ -84,6 +90,7 @@ macOS (environment variables for `install.sh`):
 | `BUNDLE_ID` | `com.local.codexpp` |
 | `USER_DATA_DIR` | `~/Library/Application Support/CodexPP` |
 | `CODEX_HOME_SHARED` | `~/.codex` |
+| `SKIP_CLAUDE_PEERS` | unset (set to any value to skip the claude-peers MCP server) |
 
 Windows (parameters for `install.ps1`):
 
@@ -92,10 +99,30 @@ Windows (parameters for `install.ps1`):
 | `-SrcApp` | auto-detected from the `OpenAI.Codex` store package |
 | `-DestDir` | `%LOCALAPPDATA%\Programs\CodexPP` |
 | `-DataDir` | `%LOCALAPPDATA%\CodexPP` |
+| `-SkipClaudePeers` | off (skips the claude-peers MCP server) |
 
 `CODEX_HOME` is deliberately **shared** with the original app so thread
 history, projects and skills carry over. The user data dir is separate —
 without it the two apps collide on Electron's single-instance lock.
+
+## Claude Code sessions as Codex tools
+
+The installer also registers `integrations/claude-peers`, an MCP server that
+puts the Claude Code sessions running on this machine into Codex's own tool
+list:
+
+| Tool | Does |
+|---|---|
+| `list_claude_sessions` | live sessions with name, pid, cwd, status |
+| `send_message_to_claude` | message a session; it lands there as a user prompt |
+| `read_claude_messages` | read what Claude sessions sent back |
+| `claude_peer_address` | this server's address, as Claude sees it |
+
+Traffic is bidirectional: the server registers itself the same way a Claude
+session does, so Claude's `ListAgents` lists Codex as `codex` and its
+`SendMessage` reaches it. No relay session is spawned — see
+[`integrations/claude-peers/README.md`](integrations/claude-peers/README.md)
+for the measured wire protocol and its failure modes.
 
 ## How it works
 
@@ -115,7 +142,8 @@ Installing on Windows does this:
 
 1. Copy the MSIX payload (`app\`, entry point `ChatGPT.exe`) to `DestDir`
 2. Patch `resources\app.asar` and drop `resources\hub` in place
-3. Create shortcuts that pass `--user-data-dir=<DataDir>` to `ChatGPT.exe`
+3. Update the copy's embedded ASAR header hash when present (integrity checking stays enabled)
+4. Create shortcuts that pass `--user-data-dir=<DataDir>` to `ChatGPT.exe`
 
 No plist, launcher or re-signing is needed on Windows: the store package is
 read-only, but the copy is not, and a shortcut can carry command-line
@@ -177,8 +205,10 @@ push notifications and two app-group services.
 `Codex++-bin` must be signed with entitlements, otherwise library validation
 refuses to load `Codex Framework` (*different Team IDs*).
 
-Nothing is re-signed on Windows: the copied executables keep OpenAI's
-authenticode signatures and need no entitlements.
+Nothing is re-signed on Windows. Releases with embedded ASAR integrity require
+updating the hash resource in the copied `ChatGPT.exe`; that modified copy no
+longer has a valid OpenAI Authenticode signature. The original Store executable
+is unchanged. Windows builds need no entitlements.
 
 ### Auto-update
 
@@ -200,11 +230,23 @@ code.
 | 010 | `webview/assets/app-initial-*.js` | answer the engine's token refresh request |
 | 020 | `.vite/build/early-bootstrap.js` | start the hub in the main process and set `CODEX_SPARKLE_ENABLED=false` |
 | 030 | `.vite/build/preload.js` | expose the `__codexpp` bridge to the renderer |
-| 040 | `webview/assets/app-initial-*.js` | account list, usage, switching and logout in the profile menu |
+| 040 | `webview/assets/app-*.js` + semantic selector | account list, usage, switching and logout in the profile menu |
 | 050 | `.vite/build/bootstrap-*.js` | skip the `setPath('userData')` call that triggers a macOS permission prompt |
 | 060 | `webview/assets/app-initial-*.js` | register the app-server client and restore the preferred account |
 | 070 | `webview/assets/app-initial-*.js` | treat host-supplied auth as a normal ChatGPT session in the UI |
-| 080 | `.vite/build/src-*.js` | let the main process attach the auth token in that mode |
+| 080 | `.vite/build/src-*.js` | allow external-session tokens, or verify native support in newer builds |
+| 090 | `webview/assets/app-initial-*.js` | automatic account routing and thread ownership |
+| 091 | `webview/assets/app-initial-*.js` | mark accounts ineligible on quota errors |
+| 092 | `webview/assets/app-*.js` + semantic selector | offer an eligible account in the quota banner |
+| 100 / 110 | `.vite/build/preload.js` | reset-credit and profile bridges |
+| 101 | `webview/assets/app-*.js` + semantic selector | per-account reset-credit selector |
+| 111 | `webview/assets/app-initial-*.js` | profile account avatar stack |
+| 120 / 121 | preload / app-initial | provider IPC, enabled catalog and per-thread routes |
+| 122 | `webview/assets/settings-page-*.js` | inline Providers section below Analytics |
+| 123 | `webview/assets/app-primary-*.js` | separate external efforts from native speed/usage hints |
+
+Windows build 26.901.5280.0 includes GPT-6 Astra through the upstream model
+catalog. See the [compatibility evidence and patch decision matrix](docs/astra-windows-26.901.md).
 
 Patches are anchored on meaning — protocol constants, React keys, prop
 signatures — never on minified names, and each anchor must match exactly once.
