@@ -94,12 +94,15 @@ ordinary code under `hub/`.
 | 092 / 101 | `webview/assets/app-*.js` + select | anchor | quota banner and reset-credit selector |
 | 100 / 110 | `.vite/build/preload.js` | append | reset-credit and profile bridges |
 | 111 | `webview/assets/app-initial-*.js` | anchor | profile avatar stack |
+| 120 | `webview/assets/app-initial-*.js` | anchor | route each thread through the gateway and append the ChatGPT Web rows |
 
 In 26.901, account/usage/banner UI moved into `app-primary`, while the client
 and notification listener remain in `app-initial`. Each UI patch selects its
 chunk by an i18n constant. Cross-chunk routing helpers live on `globalThis`.
 On Windows, `patch/windows-integrity.mjs` updates the copied executable's
-embedded ASAR hash after packaging, retaining validation against the new archive.
+embedded ASAR hash after packaging; on macOS, `patch/mac-integrity.mjs` rewrites
+the `ElectronAsarIntegrity` hash in the copied `Info.plist`. Validation stays
+enabled against the new archive on both platforms.
 
 Files 020 and 030 have **unhashed** names — `package.json`'s `main` field calls
 `early-bootstrap.js` by name — so no anchor search is needed; appending at the
@@ -208,6 +211,45 @@ streaming protocols and tool history. Patch 122 mounts the compact UI inside the
 existing Settings content and adds its native navigation row below Analytics.
 Its shadow root keeps provider styles out of the desktop shell. See
 [provider contracts and limits](docs/providers.md).
+
+### The ChatGPT Web gateway
+
+Neither of those constraints ended up applying. The engine takes
+`openai_base_url` **per thread**, in `ThreadStartParams.config`, so no custom
+provider and no `config.toml` mutation is needed: patch 120 puts the hub's
+loopback URL into every `thread/start`, and a stock ChatGPT.app sharing the same
+`~/.codex` keeps talking to the real backend.
+
+`hub/gateway.cjs` answers the engine's WebSocket upgrade with `426` to pull it
+onto HTTP+SSE, reads the zstd request body only far enough to see `model`, and
+streams everything that is not a `chatgpt-web/*` slug straight to
+`chatgpt.com/backend-api/codex` with the incoming `Authorization` header
+untouched — so account switching and auto-routing keep working through it.
+
+The picker rows do not come from the catalog endpoint: `model/list` is a global
+call with no thread to carry the override. Patch 120 appends them to the
+`model/list` result inside the renderer instead, cloning a live row for its
+shape. Measured protocol details are in `docs/gateway-protocol.md`.
+
+### The harness
+
+`chatgpt-web/pro-harness` runs the same browser turn in a normal chat with the
+`Codex Native2` connector attached, so the model can reach the machine the Codex
+task is running on. Four pieces carry one call:
+
+- `hub/turn-broker.cjs` mints a token per Codex turn and parks the browser turn
+  until either a tool call or the final answer arrives.
+- `hub/broker-socket.cjs` publishes the broker on a `0600` unix socket in the
+  app's userData directory.
+- `hub/mcp-server.cjs` is a stdio MCP server exposing one tool, `codex_exec`.
+  ChatGPT reaches it through the OpenAI tunnel; it forwards each call over the
+  broker socket.
+- `hub/tunnel.cjs` runs `tunnel-client` as a child of the hub, so the tunnel
+  lives and dies with the app instead of being supervised outside it.
+
+Codex advertises only the freeform `exec` gateway in code mode, so `codex_exec`
+takes a shell command and the MCP server writes the JavaScript that reaches
+`exec_command`. The model never sees the ~496 KB code-mode tool document.
 
 ## Collecting credentials
 

@@ -47,6 +47,14 @@
       "asarSha256": "6579c4326cccdb508d079ecc878ad4725451b2234370d2ed9d4db53939cf99c7",
       "testedAt": "2026-09-05",
       "notes": "Windows Store; 19 patches / 7 JS files verified. Astra message, account/reset credits, inline Providers, model selection and scrolling verified with CDP. Windows DPAPI key storage, three-connection selection, live Go messages/tools across three protocols and quota reads tested. See docs for tool limitations. Requires matching executable ASAR integrity metadata."
+    },
+    {
+      "platform": "darwin",
+      "version": "26.901.51231",
+      "build": "8109",
+      "asarSha256": "64fc2f27d2dddfa968acfacbe5e4e0328071bdc406351ff4a7d18f0b4692c83d",
+      "testedAt": "2026-09-09",
+      "notes": "macOS official release; 20 patches / 7 JS files verified. Embedded ASAR integrity fuse is on: the installer rewrites ElectronAsarIntegrity in Info.plist instead of removing it. Provider keys use the codexpp-keychain helper (login keychain master key, AES-256-GCM). Live CDP smoke: account menu, Bars usage view, GPT-6 Astra picker, Settings > Providers, keychain save/discover/remove round trip. See docs/astra-macos-26.901.md."
     }
   ]
 }

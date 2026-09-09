@@ -225,3 +225,45 @@ ipcMain.handle("codexpp:consume-reset", async (_event, accountId, creditId, rede
   }
 });
 
+
+const gateway = require("./gateway.cjs");
+
+gateway.start()
+  .then(({ baseUrl }) => console.log(`==> codexpp gateway on ${baseUrl}`))
+  .catch((err) => console.error("==> codexpp gateway failed to start:", err.message));
+
+const brokerSocket = require("./broker-socket.cjs");
+const tunnel = require("./tunnel.cjs");
+
+brokerSocket.start()
+  .then(async ({ socketPath }) => {
+    console.log(`==> codexpp broker socket on ${socketPath}`);
+    const started = await tunnel.start(socketPath);
+    console.log(started.running
+      ? `==> codexpp tunnel running ${started.tunnelId ?? ""}`.trim()
+      : `==> codexpp tunnel not started: ${started.reason}`);
+  })
+  .catch((err) => console.error("==> codexpp broker socket failed to start:", err.message));
+
+require("electron").app.on("will-quit", () => tunnel.stop());
+
+ipcMain.on("codexpp:gateway-route", (event) => {
+  event.returnValue = gateway.route();
+});
+
+const webSession = require("./web-session.cjs");
+
+ipcMain.handle("codexpp:web-open", guard("failed to open the ChatGPT window", async (_event, options) => {
+  webSession.open(options ?? {});
+  return { ok: true };
+}));
+
+ipcMain.handle("codexpp:web-status", guard("failed to read the ChatGPT window", () => webSession.status()));
+
+ipcMain.handle("codexpp:web-close", guard("failed to close the ChatGPT window", () => {
+  webSession.close();
+  return { ok: true };
+}));
+
+ipcMain.handle("codexpp:web-effort", guard("failed to read the ChatGPT effort control", () =>
+  webSession.effortTrigger()));

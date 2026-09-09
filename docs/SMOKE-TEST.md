@@ -9,14 +9,14 @@ This document provides a step-by-step verification procedure for validating Code
      ```bash
      ./install/mac/install.sh install
      ```
-   - Confirm all eight patches apply with 0 errors and unique anchor matches.
+   - Confirm every patch the installer lists applies with 0 errors and unique anchor matches (20 on 26.901).
 
 2. **Launch via Application Binary with Remote Debugging Port**:
    - Launch the binary directly (do not rely on `open -a` which might ignore `--args` if an instance is active):
      ```bash
-     /Applications/Codex++.app/Contents/MacOS/Codex++ --remote-debugging-port=9222
+     /Applications/Codex++.app/Contents/MacOS/Codex++ --remote-debugging-port=19333
      ```
-   - **Port Binding**: The debugging port may bind to IPv4 (`127.0.0.1:9222`) or IPv6 (`[::1]:9222`). Try both addresses when connecting.
+   - **Port Binding**: The debugging port may bind to IPv4 (`127.0.0.1:19333`) or IPv6 (`[::1]:19333`). Try both addresses when connecting. 19333 is this project's reserved port; check `lsof -nP -iTCP:19333` shows `Codex++-b` before debugging the app.
    - **Stale Lock Cleanup**: If the application outputs `Opening in existing browser session.` and exits immediately, remove the stale lock file if its PID is not running:
      ```bash
      rm -f "$HOME/Library/Application Support/CodexPP/SingletonLock"

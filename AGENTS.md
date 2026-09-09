@@ -2,7 +2,7 @@
 
 ## The one rule
 
-**Go from the most general to the most specific, and write down every step.**
+**Use measurements to locate the failing layer, then complete the requested fix.**
 
 When something does not work, do not start changing code. Narrow it down:
 
@@ -11,8 +11,9 @@ When something does not work, do not start changing code. Narrow it down:
 2. Find the widest layer that could explain it, and rule that layer in or out
    with a measurement — not with a guess.
 3. Only then go one layer deeper.
-4. Log each step with the evidence that closed it. The log is the deliverable;
-   the fix is a side effect.
+4. Record the evidence needed to explain the diagnosis and validate the result.
+   The requested working behavior is the deliverable; scale the diagnostic log
+   to the task and reuse measurements that remain valid.
 
 Trial-and-error edits look faster and are not. Every time this rule was skipped
 in this repo, the result was code that ran, logged, pushed into an array — and
@@ -173,10 +174,20 @@ Applying the patch is not enough on its own:
   the real text out of the DOM, take a screenshot
 - Wait and look again. Some failures land seconds after the action.
 
+This project's reserved remote-debugging port is **19333** (recorded in
+`~/.config/agent-standards/LOCAL_PORT_REGISTRY.md`). The old ad-hoc 9333 is not
+ours — Codex Computer Use (`SkyComputerUseClient`) takes it, and Electron then
+starts with no CDP listener at all while still looking healthy. It races for
+19333 too: `SkyComputerUseService` survives the app that spawned it (`ppid` 1)
+and several can pile up across restarts, so kill the strays before relaunching
+and check `lsof -nP -iTCP:19333` shows `Codex++-b`.
+
 Practical notes:
 
 - The debugging port sometimes binds to IPv4 and sometimes to IPv6 — try both
   `127.0.0.1` and `[::1]`.
+- If `/json` hangs with `HeadersTimeoutError`, check `lsof -nP -iTCP:<port>`
+  before debugging the app: another process may own the port.
 - `open -a` only passes `--args` when it actually launches a new instance. To
   be sure the flags land, run `Contents/MacOS/Codex++` directly.
 - If `~/Library/Application Support/CodexPP/SingletonLock` goes stale the app
@@ -184,6 +195,10 @@ Practical notes:
   if the pid it points at is not alive.
 - Write throwaway scripts to files. Long inline `node -e` snippets get mangled
   by shell quoting.
+- `install/mac/install.sh hub` re-copies `hub/` and re-seals the bundle in about
+  three seconds, so hub changes do not need a full reinstall or a 1.3 GB backup.
+  Quit the app first; the re-seal has to sign `Contents/MacOS/Codex++-bin` as
+  well as the bundle, or `codesign --verify --strict` rejects the Info.plist.
 
 ## Limits
 

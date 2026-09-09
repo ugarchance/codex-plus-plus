@@ -22,7 +22,12 @@ export default {
       '    learnThreadOwner: (threadId, accountId) => ipcRenderer.invoke("codexpp:routing-learn-owner", threadId, accountId),',
       '    routingSuggest: (excluded) => ipcRenderer.invoke("codexpp:routing-suggest", excluded),',
       '    markIneligible: (accountId, reason) => ipcRenderer.invoke("codexpp:routing-mark-ineligible", accountId, reason),',
-      '    clearIneligible: (accountId) => ipcRenderer.invoke("codexpp:routing-clear-ineligible", accountId)',
+      '    clearIneligible: (accountId) => ipcRenderer.invoke("codexpp:routing-clear-ineligible", accountId),',
+      '    gatewayRoute: () => ipcRenderer.sendSync("codexpp:gateway-route"),',
+      '    webOpen: (options) => ipcRenderer.invoke("codexpp:web-open", options),',
+      '    webStatus: () => ipcRenderer.invoke("codexpp:web-status"),',
+      '    webClose: () => ipcRenderer.invoke("codexpp:web-close"),',
+      '    webEffort: () => ipcRenderer.invoke("codexpp:web-effort")',
       "  });",
       "})();",
       ""

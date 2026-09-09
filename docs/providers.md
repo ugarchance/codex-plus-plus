@@ -42,7 +42,11 @@ External models currently lack native `apply_patch` in their app-server tool inv
 
 ## Storage and validation
 
-On Windows, API keys are encrypted with DPAPI CurrentUser. This Codex build lacks Electron's native safeStorage module. The fixed PowerShell DPAPI call carries data only through pipes; keys are not placed in command-line arguments, environment variables, or temporary files. Other platforms require an available secure Electron backend. There is no plaintext fallback.
+On Windows, API keys are encrypted with DPAPI CurrentUser. This Codex build lacks Electron's native safeStorage module. The fixed PowerShell DPAPI call carries data only through pipes; keys are not placed in command-line arguments, environment variables, or temporary files.
+
+On macOS the same module is missing. The installer compiles `install/mac/keychain.c` into `Contents/MacOS/codexpp-keychain`; the hub keeps a random 256-bit master key in the login keychain (service `CodexPP Safe Storage`) and encrypts each API key with AES-256-GCM (`CXP-MACKC-1:` prefix) inside `providers.json`. The helper is add-only, so a reinstall never replaces a master key that already protects stored keys, and the secret travels through stdin/stdout only. If a later install produces a different helper binary, macOS may ask once whether `codexpp-keychain` may read the item; choose Always Allow. Validation: `node tools/test-mac-keychain.mjs` and the [macOS 26.901 log](astra-macos-26.901.md).
+
+Linux still requires an available secure Electron backend. There is no plaintext fallback on any platform.
 
 The gateway binds only to loopback, with a random port and credential. Thread configuration contains only the local route. External requests do not receive ChatGPT bearer or account headers. Once streaming starts, a request is not automatically replayed against another account. External authentication/quota errors do not change native ChatGPT authentication or eligibility.
 

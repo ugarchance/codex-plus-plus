@@ -3,7 +3,7 @@
 import fs from "node:fs";
 
 const host = process.argv[2] ?? "127.0.0.1";
-const port = Number(process.argv[3] ?? 9333);
+const port = Number(process.argv[3] ?? 19333);
 const mode = process.argv[4] ?? "globals";
 
 const targets = await fetch(`http://${host}:${port}/json`).then((response) => response.json());

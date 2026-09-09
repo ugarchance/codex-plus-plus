@@ -12,6 +12,7 @@ Codex++ patches official ChatGPT / Codex desktop applications. To avoid applying
 | Windows (`win32`) | `26.820.71523` | `26.820.9563.0` | `e353c580ef4939d36f4ae32a35c896d089205c1d06b9f711cf78ffa4a3578a8a` | 2026-08-27 | Windows Store package; local CDP smoke passed |
 | macOS (`darwin`) | `26.825.51511` | `7377` | `f56ac8d5254a10fc4a04e7417fa787d135c3bbca49bad7d668d4ae65833d40c7` | 2026-08-30 | macOS official release; live CDP smoke passed (account menu, cards/bars usage view, account switch) |
 | Windows (`win32`) | `26.901.41600` | `26.901.5280.0` | `6579c4326cccdb508d079ecc878ad4725451b2234370d2ed9d4db53939cf99c7` | 2026-09-05 | Astra, account/reset UI, inline providers, model selection, scrolling, live Go tools and quota refresh verified; see [evidence and limits](provider-tools-and-usage-0905.md) |
+| macOS (`darwin`) | `26.901.51231` | `8109` | `64fc2f27d2dddfa968acfacbe5e4e0328071bdc406351ff4a7d18f0b4692c83d` | 2026-09-09 | Astra port verified with all 20 patches; embedded ASAR integrity kept and rewritten in `Info.plist`; provider keys through the login keychain helper; live CDP smoke and keychain round trip passed, see [macOS 26.901 log](astra-macos-26.901.md) |
 
 ## Rules
 

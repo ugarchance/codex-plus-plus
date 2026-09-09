@@ -61,15 +61,21 @@ install_launcher() {
         -DREAL_EXEC="\"$APP_NAME-bin\"" \
         -DUSER_DATA_DIR="\"$USER_DATA_DIR\"" \
         -o "$macos/$APP_NAME" "$REPO_DIR/install/mac/launcher.c"
+  # Keychain helper for provider API keys (hub/provider-secrets.cjs); this
+  # Electron build has no safeStorage binding on macOS either.
+  info "compiling keychain helper"
+  clang -O2 -Wall -Wextra -framework Security -framework CoreFoundation \
+        -o "$macos/codexpp-keychain" "$REPO_DIR/install/mac/keychain.c"
 }
 
 apply_patches() {
   info "patching asar"
   command -v node >/dev/null || die "node not found. Node.js required: https://nodejs.org"
-  if [ ! -d "$REPO_DIR/patch/node_modules" ]; then
-    info "installing patch dependencies"
-    npm --prefix "$REPO_DIR/patch" install --no-audit --no-fund
-  fi
+  # Same as the Windows installer: always install the locked dependency set, so
+  # an update that adds a patch dependency does not run against a stale
+  # node_modules left behind by an earlier install.
+  info "installing locked patch dependencies"
+  npm --prefix "$REPO_DIR/patch" ci --no-audit --no-fund || die "npm ci failed"
   local patch_args=(
     --src "$SRC_APP/Contents/Resources/app.asar"
     --out "$DEST_APP/Contents/Resources/app.asar"
@@ -78,6 +84,11 @@ apply_patches() {
     patch_args+=(--allow-untested-source)
   fi
   node "$REPO_DIR/patch/apply.mjs" "${patch_args[@]}"
+  # Builds with the embedded-integrity fuse on (26.901+) abort at startup
+  # unless Info.plist carries the patched asar's header hash.
+  node "$REPO_DIR/patch/mac-integrity.mjs" "$DEST_APP/Contents/Info.plist" \
+    "$SRC_APP/Contents/Resources/app.asar" "$DEST_APP/Contents/Resources/app.asar" \
+    || die "macOS ASAR integrity update failed"
 }
 
 install_hub() {
@@ -100,7 +111,7 @@ install_claude_peers() {
 edit_plist() {
   info "editing Info.plist"
   local pl="$DEST_APP/Contents/Info.plist"
-  plutil -remove ElectronAsarIntegrity "$pl" 2>/dev/null || true
+  # ElectronAsarIntegrity is kept on purpose: apply_patches rewrote its hash.
   plutil -replace CFBundleIdentifier -string "$BUNDLE_ID" "$pl"
   plutil -replace CFBundleName       -string "$APP_NAME"  "$pl"
   plutil -replace CFBundleExecutable -string "$APP_NAME"  "$pl"
@@ -157,7 +168,18 @@ sign_bundle() {
 
   codesign --force --sign - --timestamp=none --options runtime \
            --entitlements "$ENT" "$DEST_APP/Contents/MacOS/$APP_NAME-bin"
+  codesign --force --sign - --timestamp=none --options runtime \
+           "$DEST_APP/Contents/MacOS/codexpp-keychain"
 
+  codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$DEST_APP"
+  codesign --verify --strict "$DEST_APP" || die "signature verification failed"
+  xattr -cr "$DEST_APP" 2>/dev/null || true
+}
+
+reseal_bundle() {
+  info "re-sealing bundle"
+  codesign --force --sign - --timestamp=none --options runtime \
+           --entitlements "$ENT" "$DEST_APP/Contents/MacOS/$APP_NAME-bin"
   codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$DEST_APP"
   codesign --verify --strict "$DEST_APP" || die "signature verification failed"
   xattr -cr "$DEST_APP" 2>/dev/null || true
@@ -190,6 +212,14 @@ case "${1:-install}" in
     sign_bundle
     summary
     ;;
+  hub)
+    [ -d "$DEST_APP" ] || die "not installed: $DEST_APP"
+    pgrep -qf "$(printf '%s' "$DEST_APP/Contents/MacOS/" | sed 's/[][\\.*^$+?()|{}]/\\&/g')" && die "quit $APP_NAME before updating the hub"
+    install_hub
+    write_entitlements
+    reseal_bundle
+    info "hub updated"
+    ;;
   gate|check)
     gate
     ;;
@@ -201,6 +231,6 @@ case "${1:-install}" in
     echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;
   *)
-    die "usage: $0 [install|gate|uninstall]"
+    die "usage: $0 [install|hub|gate|uninstall]"
     ;;
 esac

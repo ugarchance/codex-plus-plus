@@ -134,9 +134,13 @@ Installing on macOS does this:
 
 1. Copy the bundle with `ditto`
 2. Rewrite `CFBundleIdentifier`, `CFBundleName`, `CFBundleExecutable`
-3. Compile `install/mac/launcher.c` and make it the main executable
-4. Drop `embedded.provisionprofile` and the old signature
-5. Ad-hoc sign inside out
+3. Compile `install/mac/launcher.c` and make it the main executable, and
+   `install/mac/keychain.c` (`codexpp-keychain`) for provider API keys
+4. Patch `app.asar` and rewrite the `ElectronAsarIntegrity` hash in
+   `Info.plist` (26.901+ aborts at startup without it; integrity checking
+   stays enabled)
+5. Drop `embedded.provisionprofile` and the old signature
+6. Ad-hoc sign inside out
 
 Installing on Windows does this:
 
@@ -204,6 +208,8 @@ push notifications and two app-group services.
 
 `Codex++-bin` must be signed with entitlements, otherwise library validation
 refuses to load `Codex Framework` (*different Team IDs*).
+`codexpp-keychain` is signed as well; the login-keychain item it creates is
+bound to that signature.
 
 Nothing is re-signed on Windows. Releases with embedded ASAR integrity require
 updating the hash resource in the copied `ChatGPT.exe`; that modified copy no
