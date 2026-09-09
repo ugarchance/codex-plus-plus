@@ -11,9 +11,10 @@ import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
  *   null on the home / new-chat routes whose draft ids end in `new-conversation`;
  * - before `turn/start` on the local request client, moves the engine to the
  *   thread's pinned account (transient activation: the hub keeps the default);
- * - after `turn/completed` / `turn/failed`, and when the selected chat
- *   changes, moves the engine back to the default account, but never while a
- *   turn is still running (its later model calls must keep their account);
+ * - after `turn/completed` / `turn/failed` (a notification callback on the
+ *   manager) and when the selected chat changes, moves the engine back to the
+ *   default account, but never while a turn is still running (its later model
+ *   calls must keep their account);
  * - exposes __cxpPinThread for the profile menu (040) and the header picker
  *   (095): record the owner only, the switch happens with the next message;
  * - applies a one-shot native model override to `thread/fork` when patch 095
@@ -48,8 +49,9 @@ export const helpers = [
   "const _local=_client===globalThis.__cxpClients?.local?.requestClient;",
   "if(_local&&_method===`turn/start`&&_params?.threadId&&!_params?.model?.startsWith?.(`cxp/`)){await globalThis.__cxpFollowThread(_params.threadId);_cxpRunning.add(_params.threadId)}",
   "try{return await _original(_method,_params,..._rest)}catch(_e){if(_local&&_method===`turn/start`&&_params?.threadId){_cxpRunning.delete(_params.threadId);globalThis.__cxpRestoreDefault?.()}throw _e}}}",
-  "if(_manager&&!_manager.__cxpThreadAccountsInstalled&&typeof _manager.handleNotification===`function`){_manager.__cxpThreadAccountsInstalled=!0;const _notify=_manager.handleNotification.bind(_manager);",
-  "_manager.handleNotification=_e=>{try{if((_e?.method===`turn/completed`||_e?.method===`turn/failed`)&&_manager===globalThis.__cxpClients?.local){_cxpRunning.delete(_e.params?.threadId);if(_cxpRunning.size===0)globalThis.__cxpRestoreDefault?.()}}catch{}return _notify(_e)}}};",
+  // The manager fans notifications out through addNotificationCallback(methods, notify); notify receives {method, params}.
+  "if(_manager&&!_manager.__cxpThreadAccountsInstalled&&typeof _manager.addNotificationCallback===`function`){_manager.__cxpThreadAccountsInstalled=!0;",
+  "_manager.addNotificationCallback([`turn/completed`,`turn/failed`],_n=>{try{if(_manager!==globalThis.__cxpClients?.local)return;_cxpRunning.delete(_n?.params?.threadId);if(_cxpRunning.size===0)globalThis.__cxpRestoreDefault?.()}catch{}})}};",
   "})();"
 ].join("\n");
 

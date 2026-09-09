@@ -148,6 +148,22 @@ write_entitlements() {
 PLIST
 }
 
+# Standalone helpers keep the hardened runtime, so they need the JIT
+# entitlements back: codex-code-mode-host embeds V8 and aborts at startup
+# ("Failed to reserve virtual memory for CodeRange") when signed without
+# allow-jit, which the app reports as "native pipe startup failed" for
+# Computer Use / cua_repl. $ENT carries the same allow-jit /
+# unsigned-executable-memory pair the OpenAI signature had, minus the
+# team-bound entitlements.
+sign_helpers() {
+  local res="$DEST_APP/Contents/Resources"
+  for b in codex codex-code-mode-host codex_chronicle rg; do
+    [ -f "$res/$b" ] || continue
+    codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$res/$b" 2>/dev/null \
+      || echo "    ! could not sign: Resources/$b"
+  done
+}
+
 sign_bundle() {
   info "ad-hoc signing (inside out)"
   find "$DEST_APP" -mindepth 1 \
@@ -161,10 +177,7 @@ sign_bundle() {
           || echo "    ! could not sign: ${p#"$DEST_APP"/}"
       done
 
-  local res="$DEST_APP/Contents/Resources"
-  for b in codex codex-code-mode-host codex_chronicle rg; do
-    [ -f "$res/$b" ] && codesign --force --sign - --timestamp=none --options runtime "$res/$b" 2>/dev/null || true
-  done
+  sign_helpers
 
   codesign --force --sign - --timestamp=none --options runtime \
            --entitlements "$ENT" "$DEST_APP/Contents/MacOS/$APP_NAME-bin"
@@ -212,6 +225,14 @@ case "${1:-install}" in
     sign_bundle
     summary
     ;;
+  resign)
+    [ -d "$DEST_APP" ] || die "not installed: $DEST_APP"
+    pgrep -qf "$(printf '%s' "$DEST_APP/Contents/MacOS/" | sed 's/[][\\.*^$+?()|{}]/\\&/g')" && die "quit $APP_NAME before re-signing"
+    write_entitlements
+    sign_helpers
+    reseal_bundle
+    info "helpers re-signed with entitlements and bundle re-sealed"
+    ;;
   hub)
     [ -d "$DEST_APP" ] || die "not installed: $DEST_APP"
     pgrep -qf "$(printf '%s' "$DEST_APP/Contents/MacOS/" | sed 's/[][\\.*^$+?()|{}]/\\&/g')" && die "quit $APP_NAME before updating the hub"
@@ -231,6 +252,6 @@ case "${1:-install}" in
     echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;
   *)
-    die "usage: $0 [install|hub|gate|uninstall]"
+    die "usage: $0 [install|hub|resign|gate|uninstall]"
     ;;
 esac

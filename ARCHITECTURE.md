@@ -175,8 +175,8 @@ Pinning (profile menu 040, header picker 095) writes `routing.json`
 `__cxpFollowThread` before `turn/start`: it moves the engine transiently to the
 pinned owner (or to the default when the owner is missing, exhausted or learned
 ineligible) and marks the turn as running. `turn/completed` / `turn/failed`
-(a wrapper on the manager's notification handler) and chat changes restore the
-default, but never while a turn is running, because a turn's later model calls
+(a callback registered through the manager's `addNotificationCallback`) and
+chat changes restore the default, but never while a turn is running, because a turn's later model calls
 must keep their account. External-provider threads (`cxp/` models) are skipped.
 The failover card (091) re-pins the chat to the account it switches to. The
 native footer label reflects the engine's login and refreshes on the app's own

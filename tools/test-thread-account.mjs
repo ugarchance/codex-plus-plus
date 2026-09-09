@@ -7,7 +7,7 @@ import patch from "../patch/patches/093-thread-account.mjs";
 
 const fixture =
   "function Layout(e){let t=[],{activeThreadId:n}=e;return n}" +
-  "class Manager{constructor(){const c=new Client;this.requestClient=c;let r=this.settings.restricted;}get settings(){return{restricted:false}}handleNotification(e){notified.push(e.method)}}" +
+  "class Manager{constructor(){this.callbacks=[];const c=new Client;this.requestClient=c;let r=this.settings.restricted;}get settings(){return{restricted:false}}addNotificationCallback(methods,notify){this.callbacks.push({methods,notify});return()=>{}}}" +
   "class Client{async sendRequest(method,params){calls.push({method,threadId:params?.threadId,model:params?.model});if(params?.fail)throw Error('boom');return{ok:true}}}" +
   "globalThis.Layout=Layout;globalThis.Manager=Manager;globalThis.Client=Client;";
 const patched = patch.apply(fixture);
@@ -40,7 +40,8 @@ context.Layout({ activeThreadId: undefined }); assert.equal(context.__cxpActiveT
 const manager = new context.Manager(); context.__cxpClients.local = manager; const client = manager.requestClient;
 assert.equal(client.__cxpThreadAccountsInstalled, true); assert.equal(manager.__cxpThreadAccountsInstalled, true);
 const run = (method, params) => client.sendRequest(method, params);
-const notify = (method, threadId) => manager.handleNotification({ method, params: { threadId } });
+assert.deepEqual(JSON.parse(JSON.stringify(manager.callbacks.map(c => c.methods))), [["turn/completed", "turn/failed"]], "one callback registered for turn end");
+const notify = (method, threadId) => { for (const c of manager.callbacks) if (c.methods.includes(method)) c.notify({ method, params: { threadId } }); notified.push(method); };
 
 // A turn on a chat pinned to b: switch transiently, run, then come back to the default after completion.
 await run("turn/start", { threadId: "t-b" }); await settle();

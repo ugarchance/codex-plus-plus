@@ -233,6 +233,22 @@ refuses to load `Codex Framework` (*different Team IDs*).
 `codexpp-keychain` is signed as well; the login-keychain item it creates is
 bound to that signature.
 
+The standalone helpers in `Contents/Resources` (`codex`, `codex-code-mode-host`,
+`codex_chronicle`, `rg`) are re-signed with the same entitlements file. They
+keep the hardened runtime, and `codex-code-mode-host` embeds V8: signed without
+`allow-jit` it aborts while creating its first isolate ("Failed to reserve
+virtual memory for CodeRange"), which the app shows as "native pipe startup
+failed" for Computer Use / `cua_repl`. `install/mac/install.sh resign` re-signs
+the helpers and re-seals the bundle in a few seconds (quit the app first).
+
+The main process also vets every peer that connects to its loopback pipes
+(browser-use, dynamic app tools, node REPL host services) through a native
+addon that only accepts peers when the host itself is an OpenAI-signed Codex
+bundle. Under the ad-hoc `com.local.codexpp` bundle it rejects everything with
+`missing-code-signing-identity`, so patch 096 returns the permissive
+authorizer the app uses on other platforms. The pipes stay `0600`, which
+limits them to this user's processes.
+
 Nothing is re-signed on Windows. Releases with embedded ASAR integrity require
 updating the hash resource in the copied `ChatGPT.exe`; that modified copy no
 longer has a valid OpenAI Authenticode signature. The original Store executable
