@@ -25,6 +25,7 @@ Codex++ operates locally on your machine and divides its state between two direc
 - **macOS Ad-hoc Signature**:
   - The patched bundle is signed locally using an ad-hoc signature (`codesign --sign -`).
   - Restricted Apple entitlements (`keychain-access-groups`, `application-groups`, `aps-environment`, `application-identifier`) bound to OpenAI's developer team ID are stripped because they cannot be transferred to local builds.
+  - Unmodified native Computer Use (the complete bundled service subtree), `codex`, `codex-code-mode-host`, `cua_node/bin/node`, and `node_repl` retain their original OpenAI signatures and entitlements. The macOS installer verifies their signatures and developer team identity before and after sealing the outer bundle.
   - As a result, Apple notarization is invalidated and push notifications / certain sandbox IPC capabilities are disabled.
   - **Codex++ is designed for local, single-user use and is not intended for external binary distribution.**
 - **Windows**:

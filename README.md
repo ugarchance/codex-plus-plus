@@ -162,7 +162,8 @@ Installing on macOS does this:
    `Info.plist` (26.901+ aborts at startup without it; integrity checking
    stays enabled)
 5. Drop `embedded.provisionprofile` and the old signature
-6. Ad-hoc sign inside out
+6. Ad-hoc sign inside out, preserving the original signatures of native
+   Computer Use and its trusted engine/runtime helpers
 
 Installing on Windows does this:
 
@@ -233,13 +234,20 @@ refuses to load `Codex Framework` (*different Team IDs*).
 `codexpp-keychain` is signed as well; the login-keychain item it creates is
 bound to that signature.
 
-The standalone helpers in `Contents/Resources` (`codex`, `codex-code-mode-host`,
-`codex_chronicle`, `rg`) are re-signed with the same entitlements file. They
-keep the hardened runtime, and `codex-code-mode-host` embeds V8: signed without
-`allow-jit` it aborts while creating its first isolate ("Failed to reserve
-virtual memory for CodeRange"), which the app shows as "native pipe startup
-failed" for Computer Use / `cua_repl`. `install/mac/install.sh resign` re-signs
-the helpers and re-seals the bundle in a few seconds (quit the app first).
+`codex` and `codex-code-mode-host`, plus `cua_node/bin/node` and `node_repl`,
+retain their original OpenAI signatures. Those signatures preserve the JIT
+entitlements and developer team identity needed by native Computer Use.
+Only `codex_chronicle` and `rg` are re-signed with the local entitlements.
+
+The entire `cua_node/lib/node_modules/@oai/sky/Codex Computer Use.app`
+subtree is excluded from recursive signing, including its nested client and
+frameworks. Re-signing this service ad-hoc removes its team identity and causes
+`SkyIPCRequirement.Error.teamNotFound`, surfaced as `native pipe startup failed`.
+The installer verifies these original signatures before and after signing;
+`resign` also refuses an already damaged runtime. Quit Codex++ and reinstall
+from the original source app to repair an older installation. Merely increasing
+the connection timeout or re-sealing an ad-hoc service does not restore its
+developer identity. `resign` remains available to re-seal an intact runtime.
 
 The main process also vets every peer that connects to its loopback pipes
 (browser-use, dynamic app tools, node REPL host services) through a native

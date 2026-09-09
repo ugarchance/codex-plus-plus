@@ -11,6 +11,7 @@ CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENT="$REPO_DIR/.build/entitlements.plist"
+COMPUTER_USE_REL="Contents/Resources/cua_node/lib/node_modules/@oai/sky/Codex Computer Use.app"
 
 die() { echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
@@ -24,6 +25,7 @@ gate() {
   v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null)" || die "could not read CFBundleShortVersionString"
   b="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null)" || die "could not read CFBundleVersion"
   info "source version: $v ($b)"
+  verify_computer_use_runtime "$SRC_APP"
 }
 
 require_source() {
@@ -157,8 +159,27 @@ PLIST
 # an ad-hoc re-sign there (no team) makes the service reject cua_repl with
 # "Sky Computer Use native pipe startup failed". ditto preserves those
 # signatures on copy and nothing else re-signs these two Mach-Os, so leave
-# them untouched. codex_chronicle and rg carry no such requirement; re-signing
-# them ad-hoc with $ENT is harmless and keeps the hardened runtime consistent.
+# them untouched. The service bundle also needs its own TeamIdentifier; the
+# recursive signer below must preserve that entire subtree, including its
+# nested client, frameworks and entitlements. codex_chronicle and rg carry no
+# such requirement; re-signing them ad-hoc with $ENT is harmless.
+verify_computer_use_runtime() {
+  local app="$1" rel metadata
+  # Older source builds may not ship the native Computer Use runtime.
+  [ -d "$app/$COMPUTER_USE_REL" ] || return 0
+  for rel in Contents/Resources/codex Contents/Resources/codex-code-mode-host \
+             Contents/Resources/cua_node/bin/node Contents/Resources/cua_node/bin/node_repl \
+             "$COMPUTER_USE_REL"; do
+    [ -e "$app/$rel" ] || die "Computer Use runtime missing: $app/$rel"
+    codesign --verify --deep --strict "$app/$rel" \
+      || die "invalid Computer Use signature: $app/$rel; reinstall from the original source app"
+    metadata="$(codesign -dv "$app/$rel" 2>&1)" \
+      || die "could not inspect Computer Use signature: $app/$rel"
+    printf '%s\n' "$metadata" | grep -qx 'TeamIdentifier=2DC432GLL2' \
+      || die "Computer Use requires the original OpenAI signature: $app/$rel; reinstall from the original source app"
+  done
+}
+
 sign_helpers() {
   local res="$DEST_APP/Contents/Resources"
   for b in codex_chronicle rg; do
@@ -169,10 +190,12 @@ sign_helpers() {
 }
 
 sign_bundle() {
+  verify_computer_use_runtime "$DEST_APP"
   info "ad-hoc signing (inside out)"
   find "$DEST_APP" -mindepth 1 \
+       -path "$DEST_APP/$COMPUTER_USE_REL" -prune -o \
        \( -name '*.app' -o -name '*.framework' -o -name '*.xpc' \
-          -o -name '*.docktileplugin' -o -name '*.dylib' -o -name '*.so' -o -name '*.node' \) \
+          -o -name '*.docktileplugin' -o -name '*.dylib' -o -name '*.so' -o -name '*.node' \) -print \
     | awk '{print gsub(/\//,"/") "\t" $0}' | sort -rn | cut -f2- \
     | while IFS= read -r p; do
         [ -e "$p" ] || continue
@@ -190,15 +213,18 @@ sign_bundle() {
 
   codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$DEST_APP"
   codesign --verify --strict "$DEST_APP" || die "signature verification failed"
+  verify_computer_use_runtime "$DEST_APP"
   xattr -cr "$DEST_APP" 2>/dev/null || true
 }
 
 reseal_bundle() {
+  verify_computer_use_runtime "$DEST_APP"
   info "re-sealing bundle"
   codesign --force --sign - --timestamp=none --options runtime \
            --entitlements "$ENT" "$DEST_APP/Contents/MacOS/$APP_NAME-bin"
   codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$DEST_APP"
   codesign --verify --strict "$DEST_APP" || die "signature verification failed"
+  verify_computer_use_runtime "$DEST_APP"
   xattr -cr "$DEST_APP" 2>/dev/null || true
 }
 
@@ -216,6 +242,8 @@ summary() {
   echo "  run: open -a \"$DEST_APP\""
 }
 
+# Allow the signing functions to be exercised against disposable bundles.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
 case "${1:-install}" in
   install)
     gate
@@ -259,3 +287,4 @@ case "${1:-install}" in
     die "usage: $0 [install|hub|resign|gate|uninstall]"
     ;;
 esac
+fi
