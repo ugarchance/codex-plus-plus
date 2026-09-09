@@ -30,7 +30,7 @@ const pageFixture = [
 ].join("");
 const pagePatched = header.apply(pageFixture);
 assert.throws(() => header.apply(pageFixture + pageFixture.replaceAll("$o", "$p")), /Expected one enclosing function/, "two registrations are rejected");
-const view = { activeAccountId: "a", accounts: [{ id: "a", label: "Alpha", planType: "pro", usedPercent: 20 }, { id: "b", label: "Beta", email: "b@x", planType: "plus", usedPercent: 55 }] };
+const view = { activeAccountId: "b", defaultAccountId: "a", accounts: [{ id: "a", label: "Alpha", planType: "pro", usedPercent: 20 }, { id: "b", label: "Beta", email: "b@x", planType: "plus", usedPercent: 55 }] };
 const routing = { threadOwner: { "t-b": "b", "t-gone": "zzz" }, learnedIneligible: {} };
 const page = { innerWidth: 1200 }; page.globalThis = page;
 page.__codexpp = { accountsSync: () => view, routingView: () => routing, forgetThreadOwner: async () => routing };
@@ -48,7 +48,7 @@ assert.equal(theirs.p.actionId, "codex-conversation-share"); assert.equal(theirs
 // --- rows model
 const rows = page.__cxpThreadAccountRows;
 let r = rows(view, routing, "t-new", null, null);
-assert.equal(r.kind, "accounts"); assert.equal(r.pinned, false); assert.equal(r.selectedId, "a"); assert.equal(r.label, "Alpha");
+assert.equal(r.kind, "accounts"); assert.equal(r.pinned, false); assert.equal(r.selectedId, "a", "unpinned chats show the default account, not the engine's transient one"); assert.equal(r.label, "Alpha");
 same(r.rows.map(x => [x.id, x.selected, x.left, x.plan]), [["a", true, 80, "pro"], ["b", false, 45, "plus"]]);
 r = rows(view, routing, "t-b", null, null);
 assert.equal(r.pinned, true); assert.equal(r.selectedId, "b"); assert.equal(r.label, "Beta");
@@ -72,5 +72,5 @@ const rowKeys = dialog.p.children.filter(c => c && c.p && c.p["data-cxp"] === "t
 same(rowKeys, ["a", "b", "automatic"]);
 const unpinned = page.__cxpThreadAccountPicker({ conversationId: "t-new", hostId: "local" });
 same(unpinned.p.children[1].p.children.filter(c => c && c.p && c.p["data-cxp"] === "thread-account-row").map(c => c.k), ["a", "b"]);
-assert.match(unpinned.p.children[0].p.title, /active account: Alpha/);
+assert.match(unpinned.p.children[0].p.title, /default account: Alpha/);
 console.log("Thread account header: bridge publication, sibling registration before Share, rows model and picker render passed");

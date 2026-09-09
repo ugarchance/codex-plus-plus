@@ -23,7 +23,7 @@ const helpers = [
   `      const _api = globalThis.__codexpp;`,
   `      if (!_api || !_threadId) return;`,
   `      const _view = _api.accountsSync?.();`,
-  `      const _activeId = _view?.activeAccountId;`,
+  `      const _activeId = _view?.defaultAccountId ?? _view?.activeAccountId;`,
   `      if (_activeId) {`,
   `        _api.learnThreadOwner?.(_threadId, _activeId);`,
   `      }`,

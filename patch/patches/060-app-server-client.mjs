@@ -15,10 +15,10 @@ const helpers = [
   "type:`chatgptAuthTokens`,accessToken:_credentials.accessToken,",
   "chatgptAccountId:_credentials.chatgptAccountId,chatgptPlanType:_credentials.chatgptPlanType??null});",
 
-  "globalThis.__cxpActivate=async _id=>{",
+  "globalThis.__cxpActivate=async(_id,_opts)=>{",
   "const _api=globalThis.__codexpp,_client=globalThis.__cxpClients?.local;",
   "if(!_api||!_client)return null;",
-  "const _res=await _api.activate(_id);",
+  "const _res=await _api.activate(_id,_opts);",
   "if(!_res?.ok)return null;",
   "await globalThis.__cxpSwitch(_client,_res.credentials);",
   "return _res.view};",

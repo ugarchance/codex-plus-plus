@@ -9,8 +9,9 @@ import { functionAt } from "../lib/ast.mjs";
  * from the local-conversation-page chunk. This patch registers a sibling
  * action (order 99, so it renders left of Share) whose node is a small picker:
  * - normal chats: the connected ChatGPT accounts; the check marks the pinned
- *   owner, or the engine's active account when nothing is pinned. Picking a
- *   row pins the chat (__cxpPinThread, patch 093) and an "Automatic" row
+ *   owner, or the default account when nothing is pinned. Picking a row pins
+ *   the chat (__cxpPinThread, patch 093: the engine switches with the next
+ *   message, the default account is untouched) and an "Automatic" row
  *   removes the pin (forgetThreadOwner).
  * - external-provider chats (patch 121 route): the provider label plus
  *   "Continue with ChatGPT (copy)", which forks the thread with a native
@@ -34,7 +35,7 @@ export function helpers({ react, jsx }) {
     "const _cxpPlans={free:'Free',go:'Go',plus:'Plus',pro:'Pro',prolite:'Pro Lite',team:'Team',business:'Business',enterprise:'Enterprise',edu:'Edu'};",
     // Pure: what the picker shows for a thread. Tested in tools/test-thread-account-header.mjs.
     "globalThis.__cxpThreadAccountRows=(_view,_routing,_threadId,_route,_connections)=>{",
-    "const _accounts=_view?.accounts??[];const _active=_view?.activeAccountId??null;",
+    "const _accounts=_view?.accounts??[];const _active=_view?.defaultAccountId??_view?.activeAccountId??null;",
     "if(_route){const _conn=(_connections??[]).find(_c=>_c.id===_route.connectionId);const _model=_route.modelId??null;",
     "return{kind:'external',label:_conn?.label??(_model?_model.split('/')[1]:null)??'External provider',model:_model,rows:[],selectedId:null,pinned:false}}",
     "const _owner=_threadId?_routing?.threadOwner?.[_threadId]??null:null;",
@@ -80,13 +81,13 @@ export function helpers({ react, jsx }) {
     "if(_external){_items.push(_row('provider',{disabled:true,icon:_avatar(_state.label,4,18),title:'Runs on '+_state.label,sub:_state.model??null}));",
     "_items.push(_row('copy',{icon:J.jsx('span',{className:'flex shrink-0 items-center justify-center',style:{width:18},children:_chevron}),title:'Continue with ChatGPT (copy)',sub:'Copies this conversation into a ChatGPT-backed chat',onClick:_copy}))}",
     "else{_state.rows.forEach((_r,_i)=>_items.push(_row(_r.id,{icon:_avatar(_r.label,_i,18),title:_r.plan?_r.label+' \\u00b7 '+(_cxpPlans[_r.plan]??_r.plan):_r.label,sub:_r.ineligible?'Not eligible for Codex':null,right:J.jsxs('span',{className:'flex shrink-0 items-center gap-1.5 text-xs text-codex-description',children:[_r.left==null?null:_r.left+'%',_r.selected?_check:null]}),onClick:()=>_pick(_r.id)})));",
-    "if(_state.pinned)_items.push(_row('automatic',{icon:J.jsx('span',{style:{width:18}}),title:'Automatic',sub:'Follow the active account',onClick:_automatic}))}",
+    "if(_state.pinned)_items.push(_row('automatic',{icon:J.jsx('span',{style:{width:18}}),title:'Automatic',sub:'Use the default account',onClick:_automatic}))}",
     "const _selectedIndex=_external?4:Math.max(0,_state.rows.findIndex(_r=>_r.selected));",
     "return J.jsxs(J.Fragment,{children:[",
-    "J.jsxs('button',{ref:_button,type:'button','data-cxp':'thread-account-trigger','aria-label':'Account for this chat','aria-haspopup':'dialog','aria-expanded':_open,title:_external?'This chat runs on '+_state.label:(_state.pinned?'Pinned to '+_state.label:'Using the active account: '+_state.label),onClick:()=>{_setError(null);_refresh();_setOpen(true)},onMouseEnter:()=>_setHover('trigger'),onMouseLeave:()=>_setHover(null),className:'no-drag cursor-interaction flex h-7 items-center gap-1.5 rounded-md px-2 text-sm text-codex-primary',style:{maxWidth:180,background:_hover==='trigger'?'var(--color-surface-tertiary)':'transparent',border:'none'},children:[_avatar(_state.label,_selectedIndex,16),J.jsx('span',{className:'truncate',children:_state.label}),_chevron]}),",
+    "J.jsxs('button',{ref:_button,type:'button','data-cxp':'thread-account-trigger','aria-label':'Account for this chat','aria-haspopup':'dialog','aria-expanded':_open,title:_external?'This chat runs on '+_state.label:(_state.pinned?'Pinned to '+_state.label:'Using the default account: '+_state.label),onClick:()=>{_setError(null);_refresh();_setOpen(true)},onMouseEnter:()=>_setHover('trigger'),onMouseLeave:()=>_setHover(null),className:'no-drag cursor-interaction flex h-7 items-center gap-1.5 rounded-md px-2 text-sm text-codex-primary',style:{maxWidth:180,background:_hover==='trigger'?'var(--color-surface-tertiary)':'transparent',border:'none'},children:[_avatar(_state.label,_selectedIndex,16),J.jsx('span',{className:'truncate',children:_state.label}),_chevron]}),",
     "J.jsxs('dialog',{ref:_dialog,'data-cxp':'thread-account-menu','aria-label':'Account for this chat',className:'text-codex-primary',style:{position:'fixed',inset:'auto',margin:0,padding:4,minWidth:264,maxWidth:340,border:'1px solid var(--color-border-subtle)',borderRadius:10,background:'var(--color-surface-secondary)',color:'inherit',boxShadow:'0 8px 24px rgba(0,0,0,.28)'},children:[",
     "J.jsx('style',{children:'dialog[data-cxp=thread-account-menu]::backdrop{background:transparent}'}),",
-    "J.jsx('div',{className:'px-2 pb-1 pt-1.5 text-xs text-codex-description',children:_external?'Provider for this chat':(_state.pinned?'This chat is pinned to':'Account for this chat (active)')}),",
+    "J.jsx('div',{className:'px-2 pb-1 pt-1.5 text-xs text-codex-description',children:_external?'Provider for this chat':(_state.pinned?'This chat is pinned to':'Account for this chat (default)')}),",
     "..._items,",
     "_error?J.jsx('div',{className:'px-2 py-1.5 text-xs',style:{color:'var(--color-text-danger,#e5484d)'},children:_error}):null]})]})};",
     "})();"

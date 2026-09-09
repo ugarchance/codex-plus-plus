@@ -63,18 +63,23 @@ Open the profile menu in the sidebar footer:
 - **Usage remaining** — the combined headroom across every connected
   subscription, shown when you have more than one.
 - **Account rows** — avatar, label, plan and that account's own remaining
-  usage. A check marks the account the engine is currently using. Click a row
-  to switch to it. While a chat is open, clicking a row also pins that chat to
-  the account: the row shows a **This chat** badge, and every later message in
-  that chat (and reopening it) switches the engine back to that account first.
-  Chats you never pinned stay on the account that started them; an exhausted
-  or ineligible pinned account is skipped, and the failover card re-pins the
-  chat to the account it switches to.
+  usage. A check marks your **default** account: new chats start on it and
+  it never changes behind your back. On the home screen, clicking a row makes
+  it the default. While a chat is open, clicking a row pins **that chat only**
+  to the account (a **This chat** badge appears); the default stays put.
+- **Per-chat pins** — every message in a pinned chat is sent with the pinned
+  account: the engine switches to it just for that turn and returns to the
+  default when the turn finishes or you open another chat. Chats you never
+  pinned use the default; an exhausted or ineligible pinned account falls
+  back to the default, and the failover card re-pins the chat to the account
+  it switches to. Two chats pinned to different accounts cannot run turns at
+  the same time on different accounts; the second turn uses whichever account
+  the running turn holds.
 - **Account picker in the thread header** — left of **Share**, a small
   avatar + name button shows which account the open chat uses (the pinned one,
-  or the active account). Pick another account to pin the chat to it, or
+  or the default). Pick another account to pin the chat to it, or
   **Automatic** to remove the pin. It appears once the chat exists; a brand-new
-  chat uses the active account (or auto-routing's choice) for its first
+  chat uses the default account (or auto-routing's choice) for its first
   message.
 - **External-provider chats** — a chat that runs on a provider from
   Settings → Providers shows the provider instead of an account, plus

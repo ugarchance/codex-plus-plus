@@ -9,11 +9,13 @@ function backupPath() {
   return path.join(store.userDataDir(), `auth-backup-${stamp}.json`);
 }
 
-async function activate(accountId) {
+// options.transient: move the engine only; the default (preferred) account,
+// which new chats and the profile menu use, stays where the user put it.
+async function activate(accountId, options = {}) {
   const credentials = await tokens.credentialsFor(accountId);
   if (!credentials) return { ok: false, error: "no valid token for this account" };
   store.setActive(accountId);
-  store.setPreferred(accountId);
+  if (!options?.transient) store.setPreferred(accountId);
   return { ok: true, credentials, view: store.publicView() };
 }
 

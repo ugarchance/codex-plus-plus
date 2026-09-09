@@ -187,20 +187,21 @@ function block({ jsx, menu, item, react }) {
     "const _apply=_v=>{if(_v)_setView(_v)};",
     "const _threadId=globalThis.__cxpActiveThreadId??null;",
     "const _pinnedId=_threadId?_routing?.threadOwner?.[_threadId]??null:null;",
+    "const _defaultId=_view?.defaultAccountId??_view?.activeAccountId??null;",
     "const _pick=_id=>{Promise.resolve(_threadId?globalThis.__cxpPinThread?.(_threadId,_id):globalThis.__cxpActivate?.(_id)).then(_v=>{_apply(_v);if(_v&&_threadId)_setRouting(_r=>({..._r,threadOwner:{...(_r?.threadOwner??{}),[_threadId]:_id}}))}).catch(()=>{})};",
     "const _signOut=_id=>{Promise.resolve(globalThis.__cxpSignOut?.(_id)).then(_apply).catch(()=>{})};",
     "const _autoRoute=_routing?.autoRoute!==!1;",
     "const _toggleAutoRoute=()=>{const _next=!_autoRoute;_api?.setAutoRoute?.(_next);_setRouting(_r=>({..._r,autoRoute:_next}))};",
     "const _changeUsageView=_next=>{const _safe=_next===`bars`?`bars`:`cards`;try{localStorage.setItem(_cxpViewKey,_safe)}catch{};_setUsageView(_safe)};",
 
-    "const _activeAcc=_accounts.find(_a=>_a.id===_view?.activeAccountId);",
+    "const _activeAcc=_accounts.find(_a=>_a.id===_defaultId);",
     "const _activeIneligible=_activeAcc&&(_activeAcc.planType===`free`||_activeAcc.planType===`go`||Boolean(_routing?.learnedIneligible?.[_activeAcc.id]));",
     "const _warning=_activeIneligible",
     `?(0,${jsx}.jsx)(${item},{disabled:!0,LeftIcon:${ALERT},SubText:\`This account is excluded from auto-routing\`,children:(0,${jsx}.jsx)(\`span\`,{className:\`text-amber-500 font-medium\`,children:\`Active account not eligible\`})},\`cxp-ineligible-warning\`)`,
     ":null;",
 
     "const _rows=_accounts.map((_a,_i)=>",
-    `(0,${jsx}.jsx)(${ROW},{account:_a,index:_i,active:_a.id===_view?.activeAccountId,pinned:_a.id===_pinnedId,routing:_routing,`,
+    `(0,${jsx}.jsx)(${ROW},{account:_a,index:_i,active:_a.id===_defaultId,pinned:_a.id===_pinnedId,routing:_routing,`,
     "view:_usageView,onPick:()=>_pick(_a.id),onSignOut:()=>_signOut(_a.id)},`cxp-account-`+_a.id));",
 
     "const _known=_accounts.map(_a=>({w:typeof _a.planWeight===`number`&&_a.planWeight>0?_a.planWeight:1,left:_cxpLeft(_a.usedPercent)})).filter(_e=>_e.left!=null);",
@@ -208,7 +209,7 @@ function block({ jsx, menu, item, react }) {
     `?(0,${jsx}.jsx)(\`span\`,{className:\`whitespace-nowrap text-codex-description\`,children:\`\${Math.round(_known.reduce((_s,_e)=>_s+_e.w*_e.left,0)/_known.reduce((_s,_e)=>_s+_e.w,0))}%\`}):null;`,
     "const _summary=_accounts.length>1",
     `?(0,${jsx}.jsx)(${item},{disabled:!0,LeftIcon:${GAUGE},`,
-    "SubText:`${_accounts.length} connected subscriptions`+(_threadId?` · pick one for this chat`:``),rightIcon:_total,",
+    "SubText:`${_accounts.length} connected subscriptions`+(_threadId?` · pick one for this chat only`:``),rightIcon:_total,",
     "children:`Usage remaining`},`cxp-summary`)",
     ":_props.usage??null;",
 

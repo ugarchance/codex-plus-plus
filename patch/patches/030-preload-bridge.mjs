@@ -12,7 +12,7 @@ export default {
       '    authRefresh: (hostId, params) => ipcRenderer.invoke("codexpp:auth-refresh", hostId, params),',
       '    accountsSync: () => ipcRenderer.sendSync("codexpp:accounts-sync"),',
       '    refreshUsage: (force) => ipcRenderer.invoke("codexpp:refresh-usage", force),',
-      '    activate: (accountId) => ipcRenderer.invoke("codexpp:activate", accountId),',
+      '    activate: (accountId, options) => ipcRenderer.invoke("codexpp:activate", accountId, options),',
       '    logoutPlan: (accountId) => ipcRenderer.invoke("codexpp:logout-plan", accountId),',
       '    logoutCommit: (accountId, nextId) => ipcRenderer.invoke("codexpp:logout-commit", accountId, nextId),',
       '    addAccount: (label) => ipcRenderer.invoke("codexpp:add-account", label),',

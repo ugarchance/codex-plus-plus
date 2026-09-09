@@ -166,14 +166,21 @@ timestamped backup under `USER_DATA_DIR`. Only when nothing is left does the
 real `account/logout` run.
 
 Per-chat accounts (patch 093): the main layout's `activeThreadId` prop is
-published as `globalThis.__cxpActiveThreadId`; the profile menu (040) pins the
-open chat to the clicked row through `__cxpPinThread`, which activates the
-account and records it in `routing.json` `threadOwner`. `__cxpFollowThread`
-runs when the selected chat changes (the publish hook) and again from a
-wrapper on the local request client before `turn/start` and `thread/resume`;
-one activation is in flight per thread. It switches the engine to the pinned
-owner unless it is the active account already, no longer connected, exhausted
-or learned ineligible. Draft routes (`new-conversation`) publish `null`.
+published as `globalThis.__cxpActiveThreadId` (draft routes publish `null`).
+The hub distinguishes the **default** account (`defaultAccountId`, what the
+profile menu marks and new chats start on) from the engine's current login
+(`activeAccountId`); `activate(id, {transient: true})` moves only the latter.
+Pinning (profile menu 040, header picker 095) writes `routing.json`
+`threadOwner` and nothing else. A wrapper on the local request client runs
+`__cxpFollowThread` before `turn/start`: it moves the engine transiently to the
+pinned owner (or to the default when the owner is missing, exhausted or learned
+ineligible) and marks the turn as running. `turn/completed` / `turn/failed`
+(a wrapper on the manager's notification handler) and chat changes restore the
+default, but never while a turn is running, because a turn's later model calls
+must keep their account. External-provider threads (`cxp/` models) are skipped.
+The failover card (091) re-pins the chat to the account it switches to. The
+native footer label reflects the engine's login and refreshes on the app's own
+schedule, so it can briefly show the pinned account after a turn.
 
 The thread header is slot based: chunks register actions through
 `HeaderAction` (actionId, align, order, slotPosition) and the header renders
