@@ -148,16 +148,20 @@ write_entitlements() {
 PLIST
 }
 
-# Standalone helpers keep the hardened runtime, so they need the JIT
-# entitlements back: codex-code-mode-host embeds V8 and aborts at startup
-# ("Failed to reserve virtual memory for CodeRange") when signed without
-# allow-jit, which the app reports as "native pipe startup failed" for
-# Computer Use / cua_repl. $ENT carries the same allow-jit /
-# unsigned-executable-memory pair the OpenAI signature had, minus the
-# team-bound entitlements.
+# Keep the OpenAI Developer ID signature on codex and codex-code-mode-host:
+# it already carries allow-jit / allow-unsigned-executable-memory (so
+# codex-code-mode-host's V8 starts without "Failed to reserve virtual memory
+# for CodeRange"), AND it keeps team 2DC432GLL2, which native Computer Use
+# needs. The external SkyComputerUseService only serves a peer whose process
+# ancestry contains a team-2DC432GLL2 signer; codex is node_repl's parent, so
+# an ad-hoc re-sign there (no team) makes the service reject cua_repl with
+# "Sky Computer Use native pipe startup failed". ditto preserves those
+# signatures on copy and nothing else re-signs these two Mach-Os, so leave
+# them untouched. codex_chronicle and rg carry no such requirement; re-signing
+# them ad-hoc with $ENT is harmless and keeps the hardened runtime consistent.
 sign_helpers() {
   local res="$DEST_APP/Contents/Resources"
-  for b in codex codex-code-mode-host codex_chronicle rg; do
+  for b in codex_chronicle rg; do
     [ -f "$res/$b" ] || continue
     codesign --force --sign - --timestamp=none --options runtime --entitlements "$ENT" "$res/$b" 2>/dev/null \
       || echo "    ! could not sign: Resources/$b"
