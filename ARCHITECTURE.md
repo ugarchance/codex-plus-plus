@@ -165,6 +165,31 @@ For the native account "remove" means moving `~/.codex/auth.json` to a
 timestamped backup under `USER_DATA_DIR`. Only when nothing is left does the
 real `account/logout` run.
 
+Per-chat accounts (patch 093): the main layout's `activeThreadId` prop is
+published as `globalThis.__cxpActiveThreadId`; the profile menu (040) pins the
+open chat to the clicked row through `__cxpPinThread`, which activates the
+account and records it in `routing.json` `threadOwner`. `__cxpFollowThread`
+runs when the selected chat changes (the publish hook) and again from a
+wrapper on the local request client before `turn/start` and `thread/resume`;
+one activation is in flight per thread. It switches the engine to the pinned
+owner unless it is the active account already, no longer connected, exhausted
+or learned ineligible. Draft routes (`new-conversation`) publish `null`.
+
+The thread header is slot based: chunks register actions through
+`HeaderAction` (actionId, align, order, slotPosition) and the header renders
+them sorted by order. Patch 095 registers `cxp-thread-account` (order 99)
+next to Share (`codex-conversation-share`, order 100) in the
+local-conversation-page chunk; its node is a self-contained picker whose menu
+is a native `<dialog>` in the top layer, because the header clips descendants
+with `contain: paint` and the chunk has no react-dom portal. For
+external-provider chats (patch 121 route) it offers "Continue with ChatGPT
+(copy)": `manager.forkConversationFromLatest` with a native model (patch 093
+forces the model on `thread/fork` once) and `navigateToLocalConversation`
+from the router bridge that patch 094 publishes as `globalThis.__cxpNavigation`.
+External-provider threads (`cxp/` models) are skipped. The failover card (091)
+re-pins the chat to the account it switches to, so a quota-limited owner is not
+re-selected on the next turn.
+
 ## Per-account usage
 
 Usage comes from the engine, not from a web endpoint. The hub spawns a

@@ -45,6 +45,8 @@ jobs:
           node tools/test-mac-integrity.mjs
           node tools/test-mac-keychain.mjs
           node tools/test-app-server-restore.mjs
+          node tools/test-thread-account.mjs
+          node tools/test-thread-account-header.mjs
           node tools/test-usage-windows.cjs
           node tools/test-routing.cjs
           node tools/test-pool-stats.mjs

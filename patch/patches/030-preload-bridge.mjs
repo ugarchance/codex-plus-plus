@@ -20,6 +20,7 @@ export default {
       '    routingView: () => ipcRenderer.sendSync("codexpp:routing-view"),',
       '    setAutoRoute: (enabled) => ipcRenderer.invoke("codexpp:routing-set-auto", enabled),',
       '    learnThreadOwner: (threadId, accountId) => ipcRenderer.invoke("codexpp:routing-learn-owner", threadId, accountId),',
+      '    forgetThreadOwner: (threadId) => ipcRenderer.invoke("codexpp:routing-forget-owner", threadId),',
       '    routingSuggest: (excluded) => ipcRenderer.invoke("codexpp:routing-suggest", excluded),',
       '    markIneligible: (accountId, reason) => ipcRenderer.invoke("codexpp:routing-mark-ineligible", accountId, reason),',
       '    clearIneligible: (accountId) => ipcRenderer.invoke("codexpp:routing-clear-ineligible", accountId),',

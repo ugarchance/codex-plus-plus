@@ -271,6 +271,14 @@ function learnThreadOwner(threadId, accountId) {
   return data;
 }
 
+function forgetThreadOwner(threadId) {
+  const data = read();
+  if (!threadId || !(threadId in data.threadOwner)) return data;
+  delete data.threadOwner[threadId];
+  write(data);
+  return data;
+}
+
 function setAutoRoute(enabled) {
   const data = read();
   const next = Boolean(enabled);
@@ -332,6 +340,7 @@ module.exports = {
   writeRouting,
   ownerOf,
   learnThreadOwner,
+  forgetThreadOwner,
   setAutoRoute,
   markIneligible,
   clearIneligible

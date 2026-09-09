@@ -168,6 +168,10 @@ ipcMain.handle("codexpp:routing-learn-owner", (_event, threadId, accountId) => {
   return routing.learnThreadOwner(threadId, accountId);
 });
 
+ipcMain.handle("codexpp:routing-forget-owner", (_event, threadId) => {
+  return routing.forgetThreadOwner(threadId);
+});
+
 ipcMain.handle("codexpp:routing-suggest", async (_event, excluded) => {
   try {
     const list = store.accounts();

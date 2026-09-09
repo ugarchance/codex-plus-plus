@@ -64,7 +64,24 @@ Open the profile menu in the sidebar footer:
   subscription, shown when you have more than one.
 - **Account rows** — avatar, label, plan and that account's own remaining
   usage. A check marks the account the engine is currently using. Click a row
-  to switch to it.
+  to switch to it. While a chat is open, clicking a row also pins that chat to
+  the account: the row shows a **This chat** badge, and every later message in
+  that chat (and reopening it) switches the engine back to that account first.
+  Chats you never pinned stay on the account that started them; an exhausted
+  or ineligible pinned account is skipped, and the failover card re-pins the
+  chat to the account it switches to.
+- **Account picker in the thread header** — left of **Share**, a small
+  avatar + name button shows which account the open chat uses (the pinned one,
+  or the active account). Pick another account to pin the chat to it, or
+  **Automatic** to remove the pin. It appears once the chat exists; a brand-new
+  chat uses the active account (or auto-routing's choice) for its first
+  message.
+- **External-provider chats** — a chat that runs on a provider from
+  Settings → Providers shows the provider instead of an account, plus
+  **Continue with ChatGPT (copy)**: it forks the conversation into a
+  ChatGPT-backed chat and opens it. The original stays on the provider; a
+  stock Codex app cannot open provider chats at all (its engine has no such
+  provider), but it opens the copy.
 - **Log out icon** — signs out of that single account. If it was the active
   one, the app keeps running on the next remaining account instead of dropping
   you at the sign-in screen.

@@ -230,6 +230,23 @@ assertEqual("T5: File content does not change after identical learnThreadOwner c
 assertEqual("T5: Second call does not modify file mtime (unnecessary I/O avoided)", statAfterSecond.mtimeMs, statAfterFirst.mtimeMs);
 
 // ---------------------------------------------------------------------------
+// T5b. forgetThreadOwner (per-chat pin removal)
+// ---------------------------------------------------------------------------
+console.log("\n--- T5b: forgetThreadOwner ---");
+
+routing.learnThreadOwner("thread-gamma", "acc-pro-1");
+assertEqual("T5b: owner recorded before forget", routing.ownerOf("thread-gamma"), "acc-pro-1");
+routing.forgetThreadOwner("thread-gamma");
+assertEqual("T5b: owner removed", routing.ownerOf("thread-gamma"), null);
+assertEqual("T5b: other owners untouched", routing.ownerOf("thread-beta"), "acc-pro-1");
+const contentBeforeNoop = fs.readFileSync(testFile, "utf8");
+const statBeforeNoop = fs.statSync(testFile);
+routing.forgetThreadOwner("thread-gamma");
+routing.forgetThreadOwner(null);
+assertEqual("T5b: forgetting an unknown or empty id does not rewrite the file", fs.readFileSync(testFile, "utf8"), contentBeforeNoop);
+assertEqual("T5b: no-op forget keeps mtime", fs.statSync(testFile).mtimeMs, statBeforeNoop.mtimeMs);
+
+// ---------------------------------------------------------------------------
 // T6. DOCS/ROUTING-ANCHORS.MD EXISTENCE AND RAW MATCHES
 // ---------------------------------------------------------------------------
 console.log("\n--- T6: docs/routing-anchors.md Document and Anchor Verification ---");
