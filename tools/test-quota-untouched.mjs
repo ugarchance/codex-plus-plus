@@ -4,9 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const logFile = process.argv[2];
-const model = process.argv[3] ?? "chatgpt-web/pro";
+const model = process.argv[3] ?? "chatgpt-web/sol-full";
 if (!logFile) {
   console.error("usage: test-quota-untouched.mjs <codexpp log> [model]");
   process.exit(1);
@@ -16,7 +17,7 @@ const route = [...fs.readFileSync(logFile, "utf8")
   .matchAll(/codexpp gateway on (http:\/\/127\.0\.0\.1:\d+\/backend-api\/codex)/g)].at(-1)?.[1];
 if (!route) throw new Error("gateway route not found in the log");
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "quota-check-"));
 fs.copyFileSync(path.join(os.homedir(), ".codex", "auth.json"), path.join(home, "auth.json"));
 fs.chmodSync(path.join(home, "auth.json"), 0o600);

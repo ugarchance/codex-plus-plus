@@ -1,0 +1,8 @@
+{
+  "name": "codexpp-hub",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "tiktoken": "1.0.22"
+  }
+}

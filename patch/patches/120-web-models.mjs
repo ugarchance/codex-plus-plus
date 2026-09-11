@@ -1,74 +1,80 @@
 import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
 
 const NAME = "[A-Za-z_$][\\w$]*";
-const HELPER = "globalThis.__cxpWebRows";
-
+const HELPER = "globalThis.__cxpWebRowsV2";
 const PATTERN =
   `let\\{request:(${NAME}),promise:(${NAME})\\}=this\\.createRequest\\((${NAME}),(${NAME}),(${NAME}),(${NAME})\\);`;
 
-const WEB_MODELS = [
-  { slug: "chatgpt-web/pro", label: "ChatGPT Web — Pro", description: "ChatGPT Pro through a temporary web chat. No local tools." },
-  { slug: "chatgpt-web/pro-harness", label: "ChatGPT Web — Pro (Harness)", description: "ChatGPT Pro in a normal web chat that can run Codex tools on this machine." }
+const efforts = [
+  { reasoningEffort: "low", description: "ChatGPT Web Instant" },
+  { reasoningEffort: "medium", description: "ChatGPT Web Medium" },
+  { reasoningEffort: "high", description: "ChatGPT Web High" },
+  { reasoningEffort: "xhigh", description: "ChatGPT Web Extra High (account-gated)" },
+  { reasoningEffort: "ultra", description: "ChatGPT Web Pro (account-gated)" },
 ];
 
 const helpers = [
   ";(()=>{",
 
-  "globalThis.__cxpRoute=()=>{",
-  "if(globalThis.__cxpRouteValue!==undefined)return globalThis.__cxpRouteValue;",
-  "try{globalThis.__cxpRouteValue=globalThis.__codexpp?.gatewayRoute?.()??null}",
-  "catch{globalThis.__cxpRouteValue=null}",
-  "return globalThis.__cxpRouteValue};",
+  "globalThis.__cxpGateway=()=>{",
+  "try{const _value=globalThis.__codexpp?.gatewayRoute?.();",
+  "if(typeof _value===`string`)return{baseUrl:_value,generation:0,ready:!!_value,models:[]};",
+  "return _value&&typeof _value===`object`?_value:{baseUrl:null,generation:0,ready:!1,models:[]}}",
+  "catch{return{baseUrl:null,generation:0,ready:!1,models:[]}}};",
 
-  `${HELPER}=_rows=>{`,
+  `${HELPER}=(_rows,_specs)=>{`,
   "const _template=_rows.find(_row=>!_row.hidden)??_rows[0];",
-  "if(!_template)return[];",
-  `const _specs=${JSON.stringify(WEB_MODELS)};`,
-  "return _specs",
-  ".filter(_spec=>!_rows.some(_row=>_row.model===_spec.slug))",
+  "if(!_template||!Array.isArray(_specs))return[];",
+  "return _specs.filter(_spec=>typeof _spec?.slug===`string`&&!_rows.some(_row=>_row.model===_spec.slug))",
   ".map(_spec=>({...structuredClone(_template),",
   "id:_spec.slug,model:_spec.slug,displayName:_spec.label,description:_spec.description,",
-  "supportedReasoningEfforts:[{reasoningEffort:`medium`,description:_spec.description}],",
-  "defaultReasoningEffort:`medium`,",
-  "additionalSpeedTiers:[],serviceTiers:[],defaultServiceTier:null,",
+  `supportedReasoningEfforts:${JSON.stringify(efforts)},`,
+  "defaultReasoningEffort:`high`,additionalSpeedTiers:[],serviceTiers:[],defaultServiceTier:null,",
   "hidden:!1,isDefault:!1,upgrade:null,upgradeInfo:null,availabilityNux:null}))};",
 
-  "globalThis.__cxpParams=(_method,_params)=>{",
-  "if(_method!==`thread/start`)return _params;",
-  "const _route=globalThis.__cxpRoute();",
-  "if(!_route)return _params;",
-  "return{..._params,config:{..._params?.config,openai_base_url:_route,",
-  "features:{..._params?.config?.features,code_mode:!0,code_mode_only:!0}}}};",
+  "globalThis.__cxpParams=(_method,_params,_client)=>{",
+  "if(_method===`turn/interrupt`&&_client?.hostId===`local`)globalThis.__codexpp?.webCancel?.(_params?.threadId,_params?.turnId)?.catch(()=>{});",
+  "if(![`thread/start`,`thread/resume`,`thread/fork`].includes(_method))return _params;",
+  "const _model=_params?.model??_params?.config?.model??null;",
+  "const _web=typeof _model===`string`&&_model.startsWith(`chatgpt-web/`);",
+  "if(_client?.hostId!==`local`){if(_web)throw new Error(`ChatGPT Web is local-only; no loopback route can be sent to a remote host`);return _params}",
+  "if(typeof _model===`string`&&_model.startsWith(`cxp/`))return _params;",
+  "const _gateway=globalThis.__cxpGateway();if(!_gateway.ready||!_gateway.baseUrl){",
+  "if(typeof _model===`string`&&_model.startsWith(`chatgpt-web/`))throw new Error(`ChatGPT Web gateway is not ready; retry after the Codex++ hub starts`);",
+  "return _params}",
+  "if(_web&&!_gateway.supportedModels?.includes(_model))throw new Error(`ChatGPT Web model is unsupported: `+_model);",
+  "if(_web&&!_gateway.catalogPath)throw new Error(_gateway.catalogError??`ChatGPT Web native tool catalog is not ready`);",
+  "return{..._params,config:{..._params?.config,openai_base_url:_gateway.baseUrl}}};",
 
   "globalThis.__cxpResult=(_method,_promise)=>{",
-  "if(_method!==`model/list`||!globalThis.__cxpRoute())return _promise;",
-  "return _promise.then(_res=>{",
-  "if(!Array.isArray(_res?.data))return _res;",
-  `const _extra=${HELPER}(_res.data);`,
-  "return _extra.length?{..._res,data:[..._res.data,..._extra]}:_res",
-  "}).catch(_err=>{throw _err})};",
+  "if(_method!==`model/list`)return _promise;",
+  "return _promise.then(async _res=>{let _gateway=globalThis.__cxpGateway();",
+  "for(let _i=0;_i<30&&!_gateway.ready;_i++){await new Promise(_resolve=>setTimeout(_resolve,100));_gateway=globalThis.__cxpGateway()}",
+  "if(!_gateway.ready||!Array.isArray(_res?.data))return _res;",
+  `const _extra=${HELPER}(_res.data,_gateway.models);`,
+  "return _extra.length?{..._res,data:[..._res.data,..._extra]}:_res});};",
 
-  "})();"
+  "})();",
 ].join("\n");
 
 export default {
   id: "120-web-models",
-  description: "Route each thread through the codexpp gateway and append the ChatGPT Web rows to model/list",
+  description: "Route local start/resume/fork through the generation-aware gateway and append its Web catalog",
   glob: "webview/assets/app-initial-*.js",
   marker: HELPER,
   apply(source) {
     const [anchor, request, promise, method, params, options, extra] = matchOnce(
       source,
       PATTERN,
-      "app-server createRequest call"
+      "app-server createRequest call",
     );
     const patched = replaceOnce(
       source,
       anchor,
-      `let{request:${request},promise:__cxpPending}=this.createRequest(` +
-        `${method},globalThis.__cxpParams(${method},${params}),${options},${extra}),` +
-        `${promise}=globalThis.__cxpResult(${method},__cxpPending);`
+      `let{request:${request},promise:__cxpPending}=this.createRequest(`
+        + `${method},globalThis.__cxpParams(${method},${params},this),${options},${extra}),`
+        + `${promise}=globalThis.__cxpResult(${method},__cxpPending);`,
     );
     return `${helpers}\n${patched}`;
-  }
+  },
 };

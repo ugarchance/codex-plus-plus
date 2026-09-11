@@ -4,7 +4,8 @@ const host = process.argv[2] ?? "127.0.0.1";
 const port = Number(process.argv[3] ?? 19333);
 
 const targets = await fetch(`http://${host}:${port}/json`).then((r) => r.json());
-const target = targets.find((item) => item.type === "page" && item.url?.startsWith("app://"));
+const target = targets.find((item) => item.type === "page" && item.url === "app://-/index.html")
+  ?? targets.find((item) => item.type === "page" && item.url?.startsWith("app://") && !item.url.includes("avatar-overlay"));
 if (!target?.webSocketDebuggerUrl) throw new Error("Codex app page target not found");
 
 const socket = new WebSocket(target.webSocketDebuggerUrl);
@@ -44,10 +45,13 @@ const check = (label, ok, detail) => {
 };
 
 const route = await evaluate(`window.__codexpp?.gatewayRoute?.() ?? null`);
-check("preload exposes the gateway route", typeof route === "string" && route.startsWith("http://127.0.0.1:"), route);
+check("preload exposes generation-aware gateway readiness", route?.ready === true
+  && typeof route?.baseUrl === "string"
+  && route.baseUrl.startsWith("http://127.0.0.1:")
+  && Number.isInteger(route?.generation), JSON.stringify(route));
 
 const helpers = await evaluate(`JSON.stringify({
-  rows: typeof globalThis.__cxpWebRows,
+  rows: typeof globalThis.__cxpWebRowsV2,
   params: typeof globalThis.__cxpParams,
   result: typeof globalThis.__cxpResult
 })`);
@@ -66,8 +70,11 @@ const listed = await evaluate(`(async () => {
 const parsed = JSON.parse(listed ?? "{}");
 check("model/list carries the ChatGPT Web row", (parsed.web?.length ?? 0) > 0, listed);
 
-const injected = await evaluate(`JSON.stringify(globalThis.__cxpParams("thread/start", { cwd: "/tmp" }))`);
+const injected = await evaluate(`JSON.stringify(globalThis.__cxpParams("thread/start", { cwd: "/tmp", model: "chatgpt-web/sol-full" }, { hostId: "local" }))`);
 check("thread/start params carry the route", (injected ?? "").includes("openai_base_url"), injected);
+
+const remote = await evaluate(`(()=>{try{globalThis.__cxpParams("thread/start", { cwd: "/tmp", model: "chatgpt-web/sol-full" }, { hostId: "remote" });return {rejected:false}}catch(e){return {rejected:true,message:e.message}}})()`);
+check("remote Web selection is explicitly rejected", remote?.rejected === true && /local/i.test(remote.message), JSON.stringify(remote));
 
 const untouched = await evaluate(`JSON.stringify(globalThis.__cxpParams("turn/start", { threadId: "x" }))`);
 check("other methods are left alone", !(untouched ?? "").includes("openai_base_url"), untouched);

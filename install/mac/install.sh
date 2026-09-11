@@ -94,10 +94,13 @@ apply_patches() {
 }
 
 install_hub() {
+  info "installing locked hub dependencies"
+  (cd "$REPO_DIR/hub" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund) || die "hub npm ci failed"
   info "copying hub"
   local res="$DEST_APP/Contents/Resources"
   rm -rf "$res/hub"
   cp -R "$REPO_DIR/hub" "$res/hub"
+  cp "$REPO_DIR/THIRD_PARTY_NOTICES.md" "$res/hub/THIRD_PARTY_NOTICES.md"
 }
 
 install_claude_peers() {

@@ -240,22 +240,40 @@ const brokerSocket = require("./broker-socket.cjs");
 const tunnel = require("./tunnel.cjs");
 
 brokerSocket.start()
-  .then(async ({ socketPath }) => {
+  .then(async ({ socketPath, instanceId }) => {
     console.log(`==> codexpp broker socket on ${socketPath}`);
-    const started = await tunnel.start(socketPath);
-    console.log(started.running
-      ? `==> codexpp tunnel running ${started.tunnelId ?? ""}`.trim()
+    const started = await tunnel.start(socketPath, { expectedBrokerInstanceId: instanceId });
+    console.log(started.ready
+      ? `==> codexpp tunnel ready ${started.tunnelId ?? ""}`.trim()
       : `==> codexpp tunnel not started: ${started.reason}`);
   })
   .catch((err) => console.error("==> codexpp broker socket failed to start:", err.message));
 
-require("electron").app.on("will-quit", () => tunnel.stop());
+const electronApp = require("electron").app;
+let shutdownStarted = false;
+electronApp.on("before-quit", (event) => {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+  event.preventDefault();
+  const tunnelStopped = tunnel.stop();
+  require("./turn-broker.cjs").endAll("the Codex++ application is shutting down");
+  Promise.allSettled([tunnelStopped, gateway.stop(), brokerSocket.stop()]).finally(() => electronApp.quit());
+});
 
 ipcMain.on("codexpp:gateway-route", (event) => {
-  event.returnValue = gateway.route();
+  event.returnValue = gateway.routeInfo();
 });
 
 const webSession = require("./web-session.cjs");
+ipcMain.handle('codexpp:web-cancel', guard('failed to cancel the Web turn', (event, threadId, turnId) => {
+  if (!event.sender?.getURL?.().startsWith('app://-/') || typeof threadId !== 'string' || threadId.length > 128
+    || typeof turnId !== 'string' || turnId.length > 128) throw new Error('Invalid local Web cancellation');
+  const broker = require('./turn-broker.cjs');
+  let cancelled = false;
+  for (const turn of broker.activeForThread(threadId)) if (turn.turnId === turnId) { broker.end(turn.key, 'the user cancelled the native turn'); cancelled = true; }
+  const checkpointCancelled = require('./web-compaction.cjs').cancelThread(threadId, turnId);
+  return { cancelled: webSession.cancelThread(threadId, turnId) || checkpointCancelled || cancelled };
+}));
 
 ipcMain.handle("codexpp:web-open", guard("failed to open the ChatGPT window", async (_event, options) => {
   webSession.open(options ?? {});

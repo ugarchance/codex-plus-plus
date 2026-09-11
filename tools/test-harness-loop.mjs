@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const hubRequire = createRequire(new URL("../hub/", import.meta.url));
 const broker = hubRequire("./turn-broker.cjs");
@@ -31,7 +32,7 @@ const gateway = hubRequire("./gateway.cjs");
 const { baseUrl } = await gateway.start();
 console.log(`gateway ${baseUrl}\n`);
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "harness-loop-"));
 fs.copyFileSync(path.join(os.homedir(), ".codex", "auth.json"), path.join(home, "auth.json"));
 fs.chmodSync(path.join(home, "auth.json"), 0o600);

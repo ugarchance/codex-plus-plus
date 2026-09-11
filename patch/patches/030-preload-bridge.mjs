@@ -28,6 +28,7 @@ export default {
       '    webOpen: (options) => ipcRenderer.invoke("codexpp:web-open", options),',
       '    webStatus: () => ipcRenderer.invoke("codexpp:web-status"),',
       '    webClose: () => ipcRenderer.invoke("codexpp:web-close"),',
+      '    webCancel: (threadId, turnId) => ipcRenderer.invoke("codexpp:web-cancel", threadId, turnId),',
       '    webEffort: () => ipcRenderer.invoke("codexpp:web-effort")',
       "  });",
       "})();",

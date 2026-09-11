@@ -94,7 +94,8 @@ ordinary code under `hub/`.
 | 092 / 101 | `webview/assets/app-*.js` + select | anchor | quota banner and reset-credit selector |
 | 100 / 110 | `.vite/build/preload.js` | append | reset-credit and profile bridges |
 | 111 | `webview/assets/app-initial-*.js` | anchor | profile avatar stack |
-| 120 | `webview/assets/app-initial-*.js` | anchor | route each thread through the gateway and append the ChatGPT Web rows |
+| 119 | `.vite/build/src-*.js` | AST anchor | add a derived Web catalog to local engine startup arguments; preserve native rows and remote hosts |
+| 120 | `webview/assets/app-initial-*.js` | anchor | generation-aware local start/resume/fork routing and Web model rows, without forcing native code-mode flags |
 
 In 26.901, account/usage/banner UI moved into `app-primary`, while the client
 and notification listener remain in `app-initial`. Each UI patch selects its
@@ -258,30 +259,130 @@ streams everything that is not a `chatgpt-web/*` slug straight to
 `chatgpt.com/backend-api/codex` with the incoming `Authorization` header
 untouched — so account switching and auto-routing keep working through it.
 
-The picker rows do not come from the catalog endpoint: `model/list` is a global
-call with no thread to carry the override. Patch 120 appends them to the
-`model/list` result inside the renderer instead, cloning a live row for its
-shape. Measured protocol details are in `docs/gateway-protocol.md`.
+On engine 0.153.4, Web tools also require a model catalog supplied at **engine
+startup**; `thread/start.config.model_catalog_json` is ignored. Patch 119 supplies
+the derived catalog from `hub/web-model-catalog.cjs` only to the local engine.
+Its catalog and loopback `openai_base_url` overrides follow the `app-server`
+subcommand: in this build a later subcommand `-c` (including desktop MCP setup)
+otherwise replaces the root-level overrides. The process-local route also handles
+authenticated `/models` refresh: successful catalogs gain Web rows, native rows
+and auth/account headers remain unchanged, and failed upstream responses pass
+through. No shared model cache is deleted to activate this route.
+Original native rows are preserved; Web rows explicitly advertise their tool
+mode and own conservative limits. Full rows enable v2 plaintext subagents only
+when the native catalog advertises v2; Browser-only disables them. Existing
+threads retain their pinned engine protocol. Patch 120 merges visible
+Web rows only when absent from `model/list` and never caches initial null
+readiness. An explicit user catalog is not replaced. No shared config/auth is
+modified; changing startup catalog/account capabilities requires an application restart.
+Current measurements are in `docs/chatgpt-web-execution-20260911.md`.
 
-### The harness
+### The Full Web bridge
 
-`chatgpt-web/pro-harness` runs the same browser turn in a normal chat with the
-`Codex Native2` connector attached, so the model can reach the machine the Codex
-task is running on. Four pieces carry one call:
+`chatgpt-web/sol-full` defaults to verified Temporary Chat with the versioned
+`Codex++ Native v2` connector. `turn-broker.cjs` owns logical-turn tokens,
+call-id state and completion fences; `web-http-rounds.cjs` owns bounded HTTP
+observers/replay without repeating accepted submissions or native side effects.
+`broker-socket.cjs` exposes the active
+turn on a protected Unix socket or Windows named pipe; `mcp-server.cjs` exposes
+six bounded bridge tools; and `tunnel.cjs` owns health/readiness/restart state.
+MCP initialization negotiates an explicitly supported version when ChatGPT offers
+a newer one. A standard ping is transport liveness only; launcher readiness also
+requires the explicit broker nonce roundtrip and matching schema/instance.
 
-- `hub/turn-broker.cjs` mints a token per Codex turn and parks the browser turn
-  until either a tool call or the final answer arrives.
-- `hub/broker-socket.cjs` publishes the broker on a `0600` unix socket in the
-  app's userData directory.
-- `hub/mcp-server.cjs` is a stdio MCP server exposing one tool, `codex_exec`.
-  ChatGPT reaches it through the OpenAI tunnel; it forwards each call over the
-  broker socket.
-- `hub/tunnel.cjs` runs `tunnel-client` as a child of the hub, so the tunnel
-  lives and dies with the app instead of being supervised outside it.
+MCP server 2.1.0 uses tool schema revision 3. All six actions require a caller-
+owned `request_id`: a new id for each invocation/poll, reused only for an exact
+retry. Live ChatGPT reused JSON-RPC `id=0` for independent calls; that field is
+not an invocation identity. Token + request_id identifies the broker call, and
+different arguments under that identity fail instead of producing another effect.
+Only the existing Codex++ connector's actions need refreshing; no key or scope
+change is involved. The published schema was verified in ChatGPT on 2026-09-11.
 
-Codex advertises only the freeform `exec` gateway in code mode, so `codex_exec`
-takes a shell command and the MCP server writes the JavaScript that reaches
-`exec_command`. The model never sees the ~496 KB code-mode tool document.
+New plaintext agent messages arriving with a native result are delivered as
+separate runtime context, with author/recipient preserved; the canonical native
+receipt remains unchanged. After verified final, a bounded final-receipt journal
+can answer a late direct-child notification without opening another browser or
+reviving its revoked token. Changed instructions, history, route or unknown tool
+results do not qualify. This follows the reference's settled-outcome replay.
+
+Every bridge call returns to the active engine's advertised registry, preferring
+direct function/custom tools. Only an advertised exec gateway may resolve a
+nested `ALL_TOOLS` call. Missing tools fail explicitly, rich output is not
+flattened, and native sandbox/approval/UI semantics remain authoritative. The
+complete identity, streaming, compaction, browser-lease and validation contract
+is in [docs/chatgpt-web-v2.md](docs/chatgpt-web-v2.md).
+
+`web-browser-pool.cjs` admits at most two task-owned browser leases. A third
+active owner gets an explicit capacity error; it cannot queue behind a waiting
+parent. Only idle, physically settled slots can be reused. An explicit launch-time `CODEXPP_WEB_CHAT_HISTORY=normal`
+choice permits saved history after user consent; the default remains temporary.
+No silent normal-chat, model or tool fallback is
+allowed. Canonical full context is retained only with exact prefix continuity;
+every logical user turn gets a fresh transport token. Isolated native v1/v2
+compaction formats are implemented. Idle Full compaction reuses a proven
+canonical retained chat with a separate one-shot checkpoint capability through
+the existing MCP tool-call envelope. It has no ordinary work-tool authority;
+the control receipt and physical browser settlement both precede replacement
+history/new epoch. A missing retained source requires canonical full context,
+never a mode fallback. Active-tool handoff validates every outstanding result,
+stops queued/future source work through a control receipt, and waits for the old
+browser's physical settlement before issuing a tool-free checkpoint. Parent/child
+v2 messages preserve routing identities and use the reference plaintext marker;
+advertised `wait_agent` calls must poll for exactly 30 seconds to release the
+shared MCP channel. Implementation is distinct from live certification: see the
+execution log for failures and tests not yet run. Full live acceptance requires
+the connector in the explicitly chosen chat-history mode and verified native
+tool receipts/file effects; local fixture tests do not establish it.
+
+Retained checkpoints preserve the desktop's logical-turn history annotations;
+an exact retained connector binding is reused without reopening the mention
+menu. Initial normal-chat URL promotion (including `/c/WEB:<uuid>`) requires the
+accepted message identities, not just a matching URL pattern. Failures after
+submission stop generation before a replacement lease is admitted. Native
+`input_image` results are normalized into real MCP image blocks with metadata,
+while the native registry remains authoritative for every call.
+
+DOM observations have a bounded probe and consecutive read-only retry budget;
+they never retry submission or tools. Native cancellation owns the exact
+thread/turn even for precompiled checkpoint requests. Partial text at deadline
+cannot bypass the completion fence, and a detached assistant can rebind only to
+one proven replacement without a competing user or navigation. Stage and
+structural health diagnostics omit prompt/token/private reasoning content.
+
+Native dispatch records the bound visible pre-tool answer before execution;
+that baseline cannot pass as a later final. A partial editor insertion is undone
+only while it is still our exact transaction on the same node. Failed undo keeps
+ownership for guarded attachment/pill rollback; native editor keys clear the
+draft, and upload cleanup verifies emptiness after a completed reload. User
+edits/remounts are preserved and require explicit recovery. Image transport
+validates MIME/base64 and the complete 10-image / 20 MB each / 50 MB batch before
+upload; no truncation. Renderer loss destroys only its owned window and aborts
+its lease, without replay. Late old-window events cannot invalidate a successor.
+Native turn cancellation does not promise to kill a persistent exec session:
+the engine's `write_stdin` session lifecycle remains authoritative.
+
+Web-to-native switching converts only our transparent `ocx1:` checkpoint into a
+normal summary message and preserves native byte passthrough otherwise. The
+reverse direction uses `web-history.cjs` to recover visible canonical history
+from a bounded, exact-thread local rollout after verifying the opaque envelope
+and retained-user boundary. It never reads/decrypts reasoning or alters native
+history. Missing, divergent, rolled-back or inaccessible evidence fails before
+browser submission. The native engine may change only the retained image detail
+hint; original image bytes/URL and all task evidence remain bound. This path and
+its follow-up native patch/exec were verified live on engine 0.153.4.
+
+On Windows, the private `CODEX_HOME` does not implicitly import sandbox secrets.
+Native engine 0.153.4 nevertheless provisions machine-wide sandbox usernames,
+so a second full setup can invalidate the first home's credentials. The explicit
+`install/windows/sandbox-state.ps1` adoption operation copies only the existing
+same-machine v5 marker and opaque DPAPI credential file into the private home.
+It protects their ACLs and makes both files read-only: this engine's full setup
+must delete its marker before provisioning, and login recovery must delete the
+credentials before retrying. These operations fail instead of resetting shared
+passwords. Normal native ACL refresh and execution remain in the engine.
+This is a version-bound snapshot, not automatic credential synchronization;
+source rotation/version changes require a reviewed re-adoption, not clearing the
+guard or falling back to full access. See the Windows preflight in the v2 guide.
 
 ## Collecting credentials
 

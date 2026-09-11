@@ -1,5 +1,10 @@
 # Local gateway protocol
 
+> This file includes dated exploratory measurements. The implemented ChatGPT
+> Web v2 behavior, identities, tool surface and current `codex 0.153.4` evidence
+> are documented in [chatgpt-web-v2.md](chatgpt-web-v2.md). Where they differ,
+> the v2 document and production tests are authoritative.
+
 What the engine actually does when `openai_base_url` points at a loopback
 server. Every line below was measured against
 `/Applications/ChatGPT.app/Contents/Resources/codex` (client version
@@ -391,6 +396,12 @@ emits the result with `text()`. This follows miuuyy/codex-chatgpt-web (MIT), whi
 surface first.
 
 ## Temporary Chat cannot run the harness
+
+> Historical account/UI observation, not the current product contract. The
+> reference and later accounts may expose different behavior. As of the
+> 2026-09-11 implementation, both modes default to verified Temporary Chat; an
+> unavailable connector is a preflight error, never permission to save normal
+> history. Saved history needs explicit user opt-in. See [current behavior and evidence](chatgpt-web-v2.md).
 
 Measured 2026-09-01 in the app's own ChatGPT window over CDP.
 

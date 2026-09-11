@@ -3,9 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import http from "node:http";
+import zlib from "node:zlib";
 import { spawn } from "node:child_process";
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = process.env.CODEX_BIN
+  ?? (process.platform === "win32"
+    ? path.join(process.env.LOCALAPPDATA ?? "", "Programs", "CodexPP", "resources", "codex.exe")
+    : "/Applications/ChatGPT.app/Contents/Resources/codex");
 const REAL_HOME = path.join(os.homedir(), ".codex");
 const UPSTREAM = "https://chatgpt.com/backend-api/codex";
 const variant = process.argv[2] ?? "426";
@@ -168,18 +172,36 @@ async function run(variant) {
     console.log(`\n########## variant: ${variant} ##########`);
     const listRows = models?.data ?? rows;
     console.log(`model/list rows=${Array.isArray(listRows) ? listRows.length : "?"} keys=${Object.keys(models ?? {}).join(",")} slugs=${Array.isArray(listRows) ? listRows.slice(0,6).map((m)=>m.slug ?? m.id).join(",") : ""}`);
+    const catalogTemplate = upstreamCatalog?.models?.[0];
+    if (catalogTemplate) console.log(`catalog model keys=${Object.keys(catalogTemplate).sort().join(",")}`);
     const tally = {};
     for (const h of hits) tally[`${h.method} ${h.url} ${h.action}`] = (tally[`${h.method} ${h.url} ${h.action}`] ?? 0) + 1;
     for (const [k, v] of Object.entries(tally)) console.log(`  ${String(v).padStart(3)}x  ${k}`);
     if (postBody) {
-      const file = path.join(os.tmpdir(), `responses-post-${variant}.bin`);
-      fs.writeFileSync(file, postBody);
-      console.log(`  POST body captured: ${postBody.length} bytes -> ${path.basename(file)}`);
+      console.log(`  POST body captured in memory: ${postBody.length} bytes`);
       const postHit = hits.find((h) => h.action === "captured-post");
       console.log(`  POST content-encoding=${postHit?.contentEncoding} content-type=${postHit?.contentType} accept=${postHit?.accept}`);
       try {
-        const parsed = JSON.parse(postBody.toString("utf8"));
+        const decoded = postHit?.contentEncoding === "zstd"
+          ? zlib.zstdDecompressSync(postBody)
+          : postBody;
+        const parsed = JSON.parse(decoded.toString("utf8"));
         console.log(`  POST top-level keys: ${Object.keys(parsed).join(", ")}`);
+        console.log(`  POST input types: ${(parsed.input ?? []).map((item) => item?.type ?? item?.role ?? typeof item).join(", ")}`);
+        console.log(`  POST tools: ${(parsed.tools ?? []).map((tool) => `${tool?.type ?? "?"}:${tool?.name ?? tool?.function?.name ?? "?"}`).join(", ")}`);
+        const additional = (parsed.input ?? []).find((item) => item?.type === "additional_tools");
+        console.log(`  additional_tools count: ${additional?.tools?.length ?? 0}`);
+        console.log(`  additional_tools shapes: ${(additional?.tools ?? []).map((tool) => `${tool?.type ?? "?"}:${tool?.name ?? "?"}[${Object.keys(tool).sort().join("|")}]`).join(", ")}`);
+        for (const namespace of additional?.tools ?? []) {
+          const names = (namespace.tools ?? []).map((tool) => `${tool?.name ?? "?"}:${tool?.type ?? "function"}[${Object.keys(tool).sort().join("|")}]`);
+          console.log(`  ${namespace.name ?? "?"} registry: ${names.join(", ")}`);
+        }
+        console.log(`  message content types: ${(parsed.input ?? []).filter((item) => item?.type === "message").flatMap((item) => item.content ?? []).map((part) => part?.type ?? typeof part).join(", ")}`);
+        console.log(`  text format: ${parsed.text?.format?.type ?? "none"}`);
+        const metadata = parsed.client_metadata?.["x-codex-turn-metadata"];
+        let metadataKeys = [];
+        try { metadataKeys = Object.keys(typeof metadata === "string" ? JSON.parse(metadata) : (metadata ?? {})); } catch {}
+        console.log(`  POST turn metadata keys: ${metadataKeys.join(", ")}`);
       } catch { console.log(`  POST body is not JSON`); }
     } else {
       console.log(`  no POST body captured`);
@@ -189,9 +211,22 @@ async function run(variant) {
     const firstErr = stderr.split("\n").find((l) => l.includes("ERROR"));
     if (firstErr) console.log(`  first error: ${firstErr.slice(0, 220)}`);
   } finally {
+    child.stdin.end();
     child.kill();
-    server.close();
-    fs.rmSync(home, { recursive: true, force: true });
+    await Promise.race([
+      new Promise((resolve) => child.once("close", resolve)),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]);
+    await new Promise((resolve) => server.close(resolve));
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        fs.rmSync(home, { recursive: true, force: true });
+        break;
+      } catch (error) {
+        if (attempt === 4) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
   }
 }
 

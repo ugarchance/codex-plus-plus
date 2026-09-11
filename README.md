@@ -8,6 +8,15 @@ compact settings pane. The provider catalog can be refreshed from codex-router;
 OpenCode Go and paid Zen remain separate connections. See the
 [provider setup and current adapter limits](docs/providers.md).
 
+ChatGPT Web has separate **Browser only** and **Full** rows. Full mode keeps the
+native Codex turn as the authority for tools and permissions through the
+versioned `Codex++ Native v2` connector. See the
+[current Web v2 contract, setup boundaries and test layers](docs/chatgpt-web-v2.md).
+Both modes default to verified Temporary Chat. Normal saved history requires
+explicit user opt-in; a missing connector never silently changes the mode. Current live acceptance and
+known limitations are tracked in the [execution log](docs/chatgpt-web-execution-20260911.md);
+an offline test pass is not a live native-tool E2E pass.
+
 Codex++ installs a second app next to the original — on macOS next to
 `ChatGPT.app`, on Windows as a per-user copy of the store-installed Codex app —
 without touching the original. Every subscription you connect shows up in the

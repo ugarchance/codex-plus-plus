@@ -74,13 +74,16 @@ test('installer accepts quoted keys and preserves array tables and environment o
   assert.equal(fs.readFileSync(config, 'utf8').trim(), '[[skills.config]]\npath="keep"');
 });
 
-test('Windows scripts parse and registration respects CODEX_HOME and skip flag', { skip: process.platform !== 'win32' }, t => {
+test('Windows scripts parse and registration uses the private home and skip flag', { skip: process.platform !== 'win32' }, t => {
   const dir = fixture(t), config = path.join(dir, 'config.toml');
   fs.writeFileSync(config, 'model="test"\n');
   const script = path.join(dir, 'installer-test.ps1');
   fs.writeFileSync(script, `param([string]$RepoRoot, [string]$TestHome)
 $ErrorActionPreference = 'Stop'
 $env:CODEX_HOME = $TestHome
+$DataDir = Join-Path $TestHome 'private-data'
+New-Item -ItemType Directory -Path (Join-Path $DataDir 'codex-home') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $TestHome 'config.toml') -Destination (Join-Path $DataDir 'codex-home/config.toml')
 foreach ($file in @('install.ps1', 'uninstall.ps1')) {
   $tokens = $null; $errors = $null
   $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $RepoRoot "install/windows/$file"), [ref]$tokens, [ref]$errors)
@@ -93,14 +96,15 @@ foreach ($file in @('install.ps1', 'uninstall.ps1')) {
 function Info($message) {}
 $SkipClaudePeers = $true
 Install-ClaudePeers
-if (Test-Path (Join-Path $TestHome 'mcp')) { throw 'Skip flag ignored' }
+if (Test-Path (Join-Path $DataDir 'codex-home/mcp')) { throw 'Skip flag ignored' }
 $SkipClaudePeers = $false
 Install-ClaudePeers
 if ($LASTEXITCODE -ne 0) { throw 'Registration failed' }
 `);
   const result = spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, root, dir], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(fs.existsSync(path.join(dir, 'mcp', 'claude-peers', 'server.mjs')));
+  assert.ok(fs.existsSync(path.join(dir, 'private-data', 'codex-home', 'mcp', 'claude-peers', 'server.mjs')));
+  assert.equal(fs.readFileSync(config, 'utf8'), 'model="test"\n');
 });
 
 async function peer(t) {

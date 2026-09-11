@@ -4,9 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const logFile = process.argv[2];
-const model = process.argv[3] ?? "chatgpt-web/pro";
+const model = process.argv[3] ?? "chatgpt-web/sol-full";
 if (!logFile) {
   console.error("usage: test-web-continuity.mjs <codexpp log> [model]");
   process.exit(1);
@@ -17,7 +18,7 @@ const route = [...fs.readFileSync(logFile, "utf8")
 if (!route) throw new Error("gateway route not found in the log");
 console.log(`gateway ${route}\nmodel   ${model}\n`);
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "web-continuity-"));
 fs.copyFileSync(path.join(os.homedir(), ".codex", "auth.json"), path.join(home, "auth.json"));
 fs.chmodSync(path.join(home, "auth.json"), 0o600);

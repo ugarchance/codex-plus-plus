@@ -4,7 +4,8 @@ const host = process.argv[2] ?? "127.0.0.1";
 const port = Number(process.argv[3] ?? 19333);
 
 const targets = await fetch(`http://${host}:${port}/json`).then((r) => r.json());
-const target = targets.find((item) => item.type === "page" && item.url?.startsWith("app://"));
+const target = targets.find((item) => item.type === "page" && item.url === "app://-/index.html")
+  ?? targets.find((item) => item.type === "page" && item.url?.startsWith("app://") && !item.url.includes("avatar-overlay"));
 if (!target?.webSocketDebuggerUrl) throw new Error("Codex app page target not found");
 
 const socket = new WebSocket(target.webSocketDebuggerUrl);
@@ -98,6 +99,32 @@ if (!triggerBox) {
     if (listing) {
       const hasWebRow = /ChatGPT Web/i.test(listing);
       check("ChatGPT Web row is visible in the picker", hasWebRow, hasWebRow ? "" : listing.slice(0, 400).replace(/\n/g, " | "));
+      if (hasWebRow) {
+        const fullRowBox = await evaluate(`(() => {
+          const menu = [...document.querySelectorAll('[role="menu"][data-state="open"]')].at(-1);
+          const exact = [...(menu?.querySelectorAll('*') ?? [])]
+            .filter(item => /ChatGPT Web.*Sol.*Full/i.test((item.innerText ?? "").trim()))
+            .sort((left, right) => left.querySelectorAll('*').length - right.querySelectorAll('*').length)[0];
+          const row = exact?.closest('[role="menuitem"],button,[role="option"],[tabindex]') ?? exact;
+          if (!row) return null;
+          const r = row.getBoundingClientRect();
+          return JSON.stringify({ x: r.x, y: r.y, width: r.width, height: r.height, tag: row.tagName, role: row.getAttribute('role'), tabIndex: row.getAttribute('tabindex') });
+        })()`);
+        check("Full Web row is selectable", Boolean(fullRowBox), fullRowBox
+          ?? JSON.stringify(listing.split("\n").filter((line) => /ChatGPT Web|Browser|Full/i.test(line)).slice(0, 12)));
+        if (fullRowBox) {
+          await clickCenter(JSON.parse(fullRowBox));
+          const selectedDeadline = Date.now() + 5_000;
+          let selected = null;
+          while (!selected && Date.now() < selectedDeadline) {
+            await wait(250);
+            selected = await evaluate(`(() => [...document.querySelectorAll('button')]
+              .map(button => (button.innerText ?? "").trim())
+              .find(text => /ChatGPT Web.*Sol.*Full/i.test(text)) ?? null)()`);
+          }
+          check("picker applied Full Web model", Boolean(selected), selected ?? "trigger did not change");
+        }
+      }
     }
   }
 }

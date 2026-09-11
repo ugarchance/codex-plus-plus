@@ -4,8 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import http from "node:http";
 import { spawn } from "node:child_process";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const REAL_HOME = path.join(os.homedir(), ".codex");
 const UPSTREAM = "https://chatgpt.com/backend-api/codex";
 const variant = process.argv[2] ?? "426";

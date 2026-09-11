@@ -23,6 +23,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
+$DataDir = [IO.Path]::GetFullPath($DataDir)
 
 function Info($msg) { Write-Host "==> $msg" }
 function Die($msg)  { Write-Host "error: $msg" -ForegroundColor Red; exit 1 }
@@ -96,10 +97,15 @@ function Invoke-Patch {
 }
 
 function Install-Hub {
+  Info "installing locked hub dependencies"
+  Push-Location "$RepoRoot\hub"
+  try { npm ci --omit=dev --ignore-scripts --no-audit --no-fund; if ($LASTEXITCODE -ne 0) { Die "hub npm ci failed" } }
+  finally { Pop-Location }
   Info "copying hub"
   $hub = "$DestDir\resources\hub"
   if (Test-Path $hub) { Remove-Item $hub -Recurse -Force }
   Copy-Item "$RepoRoot\hub" $hub -Recurse
+  Copy-Item -LiteralPath "$RepoRoot\THIRD_PARTY_NOTICES.md" -Destination "$hub\THIRD_PARTY_NOTICES.md"
 }
 
 function Install-ClaudePeers {
@@ -108,7 +114,7 @@ function Install-ClaudePeers {
     return
   }
   Info "registering claude-peers MCP server"
-  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+  $codexHome = Join-Path $DataDir 'codex-home'
   & node "$RepoRoot\integrations\claude-peers\install.mjs" --codex-home $codexHome
   if ($LASTEXITCODE -ne 0) {
     Write-Host "    ! claude-peers registration failed, continuing" -ForegroundColor Yellow
@@ -145,6 +151,8 @@ if (-not (Test-Path "$SrcApp\ChatGPT.exe")) {
 Copy-App
 Invoke-Patch
 Install-Hub
+& node "$RepoRoot\hub\home.cjs" $DataDir
+if ($LASTEXITCODE -ne 0) { Die "private CODEX_HOME initialization failed" }
 Install-ClaudePeers
 Install-Shortcuts
 
@@ -153,9 +161,9 @@ Write-Host "  install complete"
 Write-Host ""
 Write-Host "  app        : $DestDir"
 Write-Host "  user data  : $DataDir  (private; the store app keeps its own)"
-Write-Host "  CODEX_HOME : $env:USERPROFILE\.codex  (shared with the original)"
+Write-Host "  CODEX_HOME : $DataDir\codex-home  (private; original CLI settings are preserved)"
 if (-not $SkipClaudePeers) {
-  Write-Host "  claude-peers: $env:USERPROFILE\.codex\mcp\claude-peers  (Claude sessions as Codex tools)"
+  Write-Host "  claude-peers: $DataDir\codex-home\mcp\claude-peers  (Claude sessions as Codex tools)"
 }
 Write-Host ""
 Write-Host "  start it from the Start Menu (`"$AppName`")"

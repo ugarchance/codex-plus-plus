@@ -4,11 +4,12 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const require = createRequire(import.meta.url);
 const gateway = require("../hub/gateway.cjs");
 
-const CODEX_BIN = process.env.CODEX_BIN ?? "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const REAL_HOME = path.join(os.homedir(), ".codex");
 
 const { baseUrl } = await gateway.start();

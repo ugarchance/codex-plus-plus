@@ -4,9 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const logFile = process.argv[2];
-const model = process.argv[3] ?? "chatgpt-web/pro";
+const model = process.argv[3] ?? "chatgpt-web/sol-full";
 const withCatalog = process.argv.includes("--with-catalog");
 const withCodeMode = process.argv.includes("--code-mode");
 
@@ -22,7 +23,7 @@ console.log(`gateway ${route}`);
 console.log(`model   ${model}`);
 console.log(`catalog ${withCatalog ? "thread config'inde veriliyor" : "verilmiyor"}\n`);
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "engine-web-model-"));
 fs.copyFileSync(path.join(os.homedir(), ".codex", "auth.json"), path.join(home, "auth.json"));
 fs.chmodSync(path.join(home, "auth.json"), 0o600);

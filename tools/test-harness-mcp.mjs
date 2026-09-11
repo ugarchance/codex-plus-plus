@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import { resolveInstalledCodexBinary } from "./installed-paths.mjs";
 
 const hubRequire = createRequire(new URL("../hub/", import.meta.url));
 
@@ -42,7 +43,7 @@ const check = (label, ok, detail) => {
   if (!ok) failures += 1;
 };
 
-const CODEX_BIN = "/Applications/ChatGPT.app/Contents/Resources/codex";
+const CODEX_BIN = resolveInstalledCodexBinary();
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "harness-mcp-home-"));
 fs.copyFileSync(path.join(os.homedir(), ".codex", "auth.json"), path.join(home, "auth.json"));
 fs.chmodSync(path.join(home, "auth.json"), 0o600);
