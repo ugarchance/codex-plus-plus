@@ -10,6 +10,68 @@ process.env.USER_DATA_DIR = fs.mkdtempSync(
 const p = require("../hub/providers.cjs");
 const g = require("../hub/provider-gateway.cjs");
 const w = require("../hub/provider-wire.cjs");
+test('Responses web search removes the redundant online flag without enabling offline requests', () => {
+  const online = w.responsesRequest({ tools: [{ type: 'web_search', external_web_access: true }] }, { id: 'model', efforts: [] });
+  assert.deepEqual(online.tools, [{ type: 'web_search' }]);
+  const offline = w.responsesRequest({ tools: [{ type: 'web_search', external_web_access: false }] }, { id: 'model', efforts: [] });
+  assert.equal(offline.tools[0].external_web_access, false);
+});
+test('Responses reasoning history omits null content and preserves the encrypted state', () => {
+  const item = { type: 'reasoning', id: 'rs-fixture', summary: [], content: null, encrypted_content: 'opaque-state' };
+  const body = w.responsesRequest({ input: [item] }, { id: 'model', efforts: ['low'] });
+  assert.equal(body.input[0].content, undefined);
+  assert.equal(body.input[0].encrypted_content, item.encrypted_content);
+  assert.equal(body.input[0].id, item.id);
+  assert.equal(item.content, null);
+});
+test('recursive MCP schemas retain their argument contract through a JSON string envelope', () => {
+  const schema = { type: 'object', properties: { value: { $ref: '#/$defs/Value' } }, $defs: {
+    Value: { anyOf: [{ type: 'string' }, { type: 'array', items: { $ref: '#/$defs/Value' } }] },
+  } };
+  const args = JSON.stringify({ value: ['a', ['b']] });
+  const payload = { tools: [{ type: 'function', name: 'nested_input', parameters: schema }],
+    input: [{ type: 'function_call', name: 'nested_input', call_id: 'old', arguments: args }] };
+  const body = w.responsesRequest(payload, { id: 'model', efforts: [] });
+  assert.equal(body.tools[0].parameters.properties.arguments_json.type, 'string');
+  assert.equal(body.tools[0].parameters.$defs, undefined);
+  assert.equal(JSON.parse(body.input[0].arguments).arguments_json, args);
+  assert.equal(payload.tools[0].parameters, schema);
+  const event = { type: 'function_call', id: 'call-fixture', name: 'nested_input', call_id: 'new', arguments: JSON.stringify({ arguments_json: args }) };
+  const restore = w.responsesEvents(payload);
+  assert.equal(restore({ type: 'response.output_item.added', item: event }).item.arguments, '');
+  assert.equal(restore({ type: 'response.function_call_arguments.delta', item_id: event.id, delta: '{' }), null);
+  assert.equal(restore({ type: 'response.output_item.done', item: event }).item.arguments, args);
+  assert.throws(() => restore({ type: 'response.output_item.done', item: { ...event, arguments: '{"arguments_json":"not json"}' } }));
+});
+test('Responses adapters preserve namespaced functions, custom tools and reasoning history', () => {
+  const payload = { client_metadata: { trace: 'private' }, model: 'cxp/test/model',
+    tools: [{ type: 'namespace', name: 'files', tools: [{ type: 'function', name: 'read', parameters: { type: 'object' } }, { type: 'custom', name: 'patch' }] }],
+    input: [{ type: 'function_call', id: 'fc0', call_id: 'c0', namespace: 'files', name: 'read', arguments: '{}' },
+      { type: 'custom_tool_call', id: 'fc1', call_id: 'c1', namespace: 'files', name: 'patch', input: 'change' },
+      { type: 'custom_tool_call_output', call_id: 'c1', output: 'ok' }, { type: 'reasoning', encrypted_content: 'upstream-capsule' }],
+    tool_choice: { type: 'custom', namespace: 'files', name: 'patch' } };
+  const body = w.responsesRequest(payload, { id: 'model', efforts: [] });
+  assert.equal(body.client_metadata, undefined);
+  assert.equal(body.tools.length, 2);
+  assert.equal(body.tools[0].type, 'function');
+  assert.equal(body.input[0].name, body.tools[0].name);
+  assert.equal(body.input[0].namespace, undefined);
+  assert.equal(body.input[1].name, body.tools[1].name);
+  assert.equal(body.input[1].arguments, '{"input":"change"}');
+  assert.equal(body.input[2].type, 'function_call_output');
+  assert.equal(body.input[3], payload.input[3]);
+  assert.equal(body.tool_choice.name, body.tools[1].name);
+  const restore = w.responsesEvents(payload);
+  const fn = { type: 'function_call', id: 'fc2', call_id: 'c2', name: body.tools[0].name, arguments: '{}' };
+  assert.equal(restore({ type: 'response.output_item.done', item: fn }).item.namespace, 'files');
+  const custom = { ...fn, id: 'fc3', name: body.tools[1].name, arguments: '{"input":"change"}' };
+  assert.equal(restore({ type: 'response.output_item.added', item: custom }).item.type, 'custom_tool_call');
+  assert.equal(restore({ type: 'response.function_call_arguments.delta', item_id: 'fc3', delta: '{' }), null);
+  assert.equal(restore({ type: 'response.output_item.done', item: custom }).item.input, 'change');
+  const completed = restore({ type: 'response.completed', response: { output: [fn, custom, payload.input[3]] } });
+  assert.equal(completed.response.output[1].name, 'patch');
+  assert.equal(completed.response.output[2], payload.input[3]);
+});
 p.setEncryptionForTests({
   isEncryptionAvailable: () => true,
   encryptString: (v) => Buffer.from("test:" + v),
@@ -105,6 +167,7 @@ test("gateway authenticates local caller, isolates provider key and reports real
     model: p.catalog()[0].model,
     input: "Hello",
     reasoning: { effort: "low" },
+    client_metadata: { desktop_trace: 'fixture' },
     stream: true,
   });
   const denied = await fetch(url, { method: "POST", body });
@@ -133,6 +196,7 @@ test("gateway authenticates local caller, isolates provider key and reports real
   assert.equal(r.headers["chatgpt-account-id"], undefined);
   assert.equal(r.body.model, "example");
   assert.equal(r.body.reasoning.effort, "low");
+  assert.equal(r.body.client_metadata, undefined);
   assert.equal(p.view().connections.find((c) => c.usage)?.usage.inputTokens, 3);
 });
 test("disabled models and invalid efforts fail before provider traffic", async () => {

@@ -94,6 +94,8 @@ function Invoke-Patch {
   if ($LASTEXITCODE -ne 0) { Die "patching failed" }
   & node "$RepoRoot\patch\windows-integrity.mjs" "$DestDir\ChatGPT.exe" "$SrcApp\resources\app.asar" "$DestDir\resources\app.asar"
   if ($LASTEXITCODE -ne 0) { Die "Windows ASAR integrity update failed" }
+  & node "$RepoRoot\patch\windows-long-paths.mjs" "$DestDir\resources\codex-windows-sandbox-setup.exe" "$SrcApp\resources\codex-windows-sandbox-setup.exe"
+  if ($LASTEXITCODE -ne 0) { Die "Windows sandbox long-path update failed" }
 }
 
 function Install-Hub {

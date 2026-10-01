@@ -4,7 +4,7 @@ const MARKER = 'codexpp-web-engine-catalog-v2';
 export default {
   id: '119-web-engine-catalog',
   description: 'Pass a native-preserving Web catalog at local Codex++ engine startup, never through shared config',
-  glob: '.vite/build/src-*.js', select: 'CODEX_APP_SERVER_OPENAI_BASE_URL', marker: MARKER,
+  glob: '.vite/build/*.js', select: 'CODEX_APP_SERVER_OPENAI_BASE_URL', marker: MARKER,
   apply(source) {
     const factory = functionAt(source, '--analytics-default-enabled');
     if (factory.type !== 'FunctionDeclaration' || factory.params.length !== 0) throw new Error('Engine argument factory changed');

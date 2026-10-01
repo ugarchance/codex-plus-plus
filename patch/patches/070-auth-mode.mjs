@@ -29,7 +29,8 @@ function replaceAll(source, pattern, label, allowed, build) {
 export default {
   id: "070-auth-mode",
   description: "Treat host-supplied chatgptAuthTokens auth as a normal ChatGPT session in the UI",
-  glob: "webview/assets/app-initial-*.js",
+  glob: "webview/assets/app-*.js",
+  select: "does not match AppServerManager hostId",
   marker: MARKER,
   apply(source) {
     const status = matchOnce(source, STATUS_PATTERN, "auth status broadcast");

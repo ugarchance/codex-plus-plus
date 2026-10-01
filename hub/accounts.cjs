@@ -12,8 +12,16 @@ function backupPath() {
 // options.transient: move the engine only; the default (preferred) account,
 // which new chats and the profile menu use, stays where the user put it.
 async function activate(accountId, options = {}) {
+  if (options.commit) {
+    if (!store.findAccount(accountId)) return { ok: false, error: "account not found" };
+    store.setActive(accountId);
+    if (!options.transient) store.setPreferred(accountId);
+    return { ok: true, view: store.publicView() };
+  }
   const credentials = await tokens.credentialsFor(accountId);
   if (!credentials) return { ok: false, error: "no valid token for this account" };
+  // The renderer commits only after the engine acknowledges account/login/start.
+  if (options.prepare) return { ok: true, credentials, view: store.publicView() };
   store.setActive(accountId);
   if (!options?.transient) store.setPreferred(accountId);
   return { ok: true, credentials, view: store.publicView() };

@@ -8,7 +8,7 @@ const PATTERN = new RegExp(
 export default {
   id: "080-main-auth-token",
   description: "Let the main process attach the auth token when the host supplies the ChatGPT session",
-  glob: ".vite/build/src-*.js",
+  glob: ".vite/build/*.js",
   select: "app_server_connection.auth_status_result",
   marker: "/*__cxpMainAuthTokenVerified*/",
   apply(source) {

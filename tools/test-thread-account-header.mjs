@@ -29,6 +29,13 @@ const pageFixture = [
   "globalThis.$o=$o;"
 ].join("");
 const pagePatched = header.apply(pageFixture);
+const unifiedFixture=pageFixture.replace('r==null?null:', 'r==null||e.hideShare?null:').replace('unifiedSlotPosition:`main`,','');
+const unified={};unified.globalThis=unified;
+vm.runInNewContext(header.apply(unifiedFixture),unified);
+assert.equal(unified.$o({conversationId:null,hideShare:true}),null);
+const hiddenShare=unified.$o({conversationId:'t1',hideShare:true});
+assert.equal(hiddenShare.p.children[0].p.actionId,'cxp-thread-account','account control survives hidden Share');
+assert.equal(hiddenShare.p.children[1],null,'native Share stays hidden');
 assert.throws(() => header.apply(pageFixture + pageFixture.replaceAll("$o", "$p")), /Expected one enclosing function/, "two registrations are rejected");
 const view = { activeAccountId: "b", defaultAccountId: "a", accounts: [{ id: "a", label: "Alpha", planType: "pro", usedPercent: 20 }, { id: "b", label: "Beta", email: "b@x", planType: "plus", usedPercent: 55 }] };
 const routing = { threadOwner: { "t-b": "b", "t-gone": "zzz" }, learnedIneligible: {} };

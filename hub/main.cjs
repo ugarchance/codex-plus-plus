@@ -43,7 +43,7 @@ ipcMain.handle("codexpp:refresh-usage", async (_event, force) => {
 
 ipcMain.handle(
   "codexpp:activate",
-  guard("failed to activate account", (_event, accountId, options) => accounts.activate(accountId, options && typeof options === "object" ? { transient: options.transient === true } : {}))
+  guard("failed to activate account", (_event, accountId, options) => accounts.activate(accountId, options && typeof options === "object" ? { transient: options.transient === true, prepare: options.prepare === true, commit: options.commit === true } : {}))
 );
 
 ipcMain.handle(

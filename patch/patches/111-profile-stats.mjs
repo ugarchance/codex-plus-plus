@@ -42,7 +42,7 @@ function block({ jsx, react }) {
     "return()=>{_alive=!1}},[]);",
     "const _accounts=_view?.accounts??[];",
     "const _activeId=_view?.activeAccountId;",
-    `if(!_api||_accounts.length<=1)return(0,${jsx}.jsx)(\`div\`,{className:\`relative mb-4 size-20\`,children:_props.avatar});`,
+    `if(!_api||_accounts.length<=1)return(0,${jsx}.jsx)(\`div\`,{className:_props.className??\`relative mb-4 size-20\`,children:_props.avatar});`,
     "const _pick=_id=>{Promise.resolve(globalThis.__cxpActivate?.(_id)??_api?.activate?.(_id)).then(_v=>{if(_v)_setView(_v)}).catch(()=>{})};",
     "const _tones=[\`--color-chart-green\`,\`--color-chart-blue\`,\`--color-chart-yellow\`,\`--color-chart-red\`,\`--color-chart-orange\`];",
     "const _avatars=_accounts.map((_a,_i)=>{",
@@ -52,11 +52,11 @@ function block({ jsx, react }) {
     "const _isActive=_a.id===_activeId;",
     `const _inner=_a.avatarUrl?(0,${jsx}.jsx)(\`img\`,{src:_a.avatarUrl,alt:_title,className:\`size-full rounded-full object-cover\`}):(0,${jsx}.jsx)(\`span\`,{className:\`flex size-full items-center justify-center font-medium text-[11px] leading-none\`,children:_initial});`,
     `return(0,${jsx}.jsx)(\`button\`,{type:\`button\`,title:\`\${_title}\${_isActive?\` (Active)\`:\`\`}\`,onClick:()=>_pick(_a.id),className:\`relative size-9 rounded-full cursor-pointer transition-transform hover:scale-105 hover:z-20 -ml-2 first:ml-0 shadow-sm border-2 \${_isActive?\`border-primary ring-2 ring-primary/40 z-10\`:\`border-token-surface-primary hover:border-token-border-light\`}\`,style:{backgroundColor:\`color-mix(in srgb, var(\${_tone}, #8a8a8a) 25%, transparent)\`,color:\`var(\${_tone}, #b4b4b4)\`},children:_inner},\`cxp-stack-\`+_a.id);});`,
-    `return(0,${jsx}.jsxs)(\`div\`,{className:\`relative mb-4 flex flex-col items-center gap-2\`,children:[(0,${jsx}.jsx)(\`div\`,{className:\`relative size-20\`,children:_props.avatar}),(0,${jsx}.jsx)(\`div\`,{className:\`flex items-center justify-center pt-1\`,children:(0,${jsx}.jsx)(\`div\`,{className:\`flex items-center pl-2\`,children:_avatars})})]})}`
+    `return(0,${jsx}.jsxs)(\`div\`,{className:\`relative mb-4 flex flex-col items-center gap-2\`,children:[(0,${jsx}.jsx)(\`div\`,{className:_props.className??\`relative size-20\`,children:_props.avatar}),(0,${jsx}.jsx)(\`div\`,{className:\`flex items-center justify-center pt-1\`,children:(0,${jsx}.jsx)(\`div\`,{className:\`flex items-center pl-2\`,children:_avatars})})]})}`
   ].join("\n");
 }
 
-const PROPS_PATTERN = `\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME}),username:(${NAME})(?:,usernameTextSizeClassName:${NAME})?\\}`;
+const PROPS_PATTERN = `\\{account:(${NAME}),avatar:(${NAME}),displayName:(${NAME})(?:,layout:${NAME})?,username:(${NAME})(?:,usernameTextSizeClassName:${NAME})?\\}`;
 
 export default {
   id: "111-profile-stats",
@@ -69,13 +69,13 @@ export default {
     if (start < 0) throw new Error("profile header function start not found");
     const body = source.slice(start, start + 2000);
 
-    const JSX_PATTERN = `\\(0,(${NAME})\\.jsx\\)\\(\`div\`,\\{className:\`relative mb-4 size-20\`,children:(${NAME})\\}\\)`;
+    const JSX_PATTERN = `\\(0,(${NAME})\\.jsx\\)\\(\`div\`,\\{className:(\`relative mb-4 size-20\`|${NAME}),children:(${props[2]})\\}\\)`;
     const jsxMatch = matchOnce(body, JSX_PATTERN, "avatar container");
     const jsx = jsxMatch[1];
-    const avatarVar = jsxMatch[2];
+    const avatarVar = jsxMatch[3];
     const react = reactNamespace(source);
 
-    const replacement = `(0,${jsx}.jsx)(${BLOCK},{avatar:${avatarVar}})`;
+    const replacement = `(0,${jsx}.jsx)(${BLOCK},{avatar:${avatarVar},className:${jsxMatch[2]}})`;
     const patchedBody = body.slice(0, jsxMatch.index) + replacement + body.slice(jsxMatch.index + jsxMatch[0].length);
 
     return (

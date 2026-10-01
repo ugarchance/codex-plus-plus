@@ -7,7 +7,7 @@ BUNDLE_ID="${BUNDLE_ID:-com.local.codexpp}"
 APP_NAME="Codex++"
 USER_DATA_DIR="${USER_DATA_DIR:-$HOME/Library/Application Support/CodexPP}"
 ALLOW_UNTESTED_SOURCE="${ALLOW_UNTESTED_SOURCE:-}"
-CODEX_HOME_SHARED="${CODEX_HOME_SHARED:-$HOME/.codex}"
+CODEXPP_HOME="$USER_DATA_DIR/codex-home"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENT="$REPO_DIR/.build/entitlements.plist"
@@ -109,7 +109,7 @@ install_claude_peers() {
     return 0
   fi
   info "registering claude-peers MCP server"
-  node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEX_HOME_SHARED" \
+  node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEXPP_HOME" \
     || echo "    ! claude-peers registration failed, continuing"
 }
 
@@ -124,8 +124,8 @@ edit_plist() {
     || plutil -insert CFBundleDisplayName -string "$APP_NAME" "$pl"
 
   plutil -insert LSEnvironment -xml '<dict/>' "$pl" 2>/dev/null || true
-  plutil -replace LSEnvironment.CODEX_HOME -string "$CODEX_HOME_SHARED" "$pl" 2>/dev/null \
-    || plutil -insert LSEnvironment.CODEX_HOME -string "$CODEX_HOME_SHARED" "$pl"
+  # The early bootstrap derives CODEX_HOME from the private user data directory.
+  plutil -remove LSEnvironment.CODEX_HOME "$pl" 2>/dev/null || true
   plutil -replace LSEnvironment.CODEX_SPARKLE_ENABLED -string "false" "$pl" 2>/dev/null \
     || plutil -insert LSEnvironment.CODEX_SPARKLE_ENABLED -string "false" "$pl"
   plutil -replace LSEnvironment.MallocNanoZone -string "0" "$pl" 2>/dev/null \
@@ -237,9 +237,9 @@ summary() {
   echo "  app         : $DEST_APP"
   echo "  bundle id   : $BUNDLE_ID"
   echo "  user data   : $USER_DATA_DIR"
-  echo "  CODEX_HOME  : $CODEX_HOME_SHARED  (shared with the original)"
+  echo "  CODEX_HOME  : $CODEXPP_HOME  (private; original CLI settings are preserved)"
   if [ -z "${SKIP_CLAUDE_PEERS:-}" ]; then
-    echo "  claude-peers: $CODEX_HOME_SHARED/mcp/claude-peers  (Claude sessions as Codex tools)"
+    echo "  claude-peers: $CODEXPP_HOME/mcp/claude-peers  (Claude sessions as Codex tools)"
   fi
   echo
   echo "  run: open -a \"$DEST_APP\""
@@ -254,6 +254,7 @@ case "${1:-install}" in
     install_launcher
     apply_patches
     install_hub
+    node "$REPO_DIR/hub/home.cjs" "$USER_DATA_DIR"
     install_claude_peers
     edit_plist
     write_entitlements
@@ -282,7 +283,7 @@ case "${1:-install}" in
   uninstall)
     info "removing: $DEST_APP"
     rm -rf "$DEST_APP"
-    node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEX_HOME_SHARED" --remove \
+    node "$REPO_DIR/integrations/claude-peers/install.mjs" --codex-home "$CODEXPP_HOME" --remove \
       || echo "    ! claude-peers removal failed"
     echo "note: $USER_DATA_DIR was kept. delete it manually if you want a clean slate."
     ;;

@@ -1,6 +1,14 @@
 {
   "testedBuilds": [
     {
+      "platform": "win32",
+      "version": "26.928.21956",
+      "build": "26.928.2636.0",
+      "asarSha256": "fb7b2ee791bcbdb3c4a6375e9fec8fb404f3eaff995f0d293227354b298aff49",
+      "testedAt": "2026-10-01",
+      "notes": "Windows Store source; 27 patches / 12 files. Live CDP: authenticated startup and delayed checks, account Cards/Bars and routing, profile, usage/reset credits, native/Web/provider picker entries, Providers settings, per-chat account menu and Automatic selection. Two valid Pro/Pro Lite accounts completed real-composer follow-ups with server-confirmed account/quota attribution and default restoration. Failed pins and cross-account overlapping turns are rejected before submission; response ownership, queue wake-up and chat navigation survive account switches. Native chat plus real sandboxed terminal execution passed after enabling Windows LongPathsEnabled and longPathAware on the separate sandbox setup helper. ChatGPT Web live test skipped by user; external live test skipped after independently confirmed provider HTTP 401. V2 contract/lifecycle tests preserved. See docs/update-2026-10-01-validation.md."
+    },
+    {
       "platform": "darwin",
       "version": "26.810.52044",
       "build": "6662",

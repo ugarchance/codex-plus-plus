@@ -3,32 +3,32 @@
 // changes, never while a turn is running; pinning records the owner without touching the default.
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import patch from "../patch/patches/093-thread-account.mjs";
+import patch, {publicationPatch} from "../patch/patches/093-thread-account.mjs";
 
 const fixture =
   "function Layout(e){let t=[],{activeThreadId:n}=e;return n}" +
-  "class Manager{constructor(){this.callbacks=[];const c=new Client;this.requestClient=c;let r=this.settings.restricted;}get settings(){return{restricted:false}}addNotificationCallback(methods,notify){this.callbacks.push({methods,notify});return()=>{}}}" +
+  "class Manager{constructor(){this.callbacks=[];const c=new Client;if(c.hostId==='bad')throw Error('does not match AppServerManager hostId');this.requestClient=c;let r=this.settings.restricted;}get settings(){return{restricted:false}}addNotificationCallback(methods,notify){this.callbacks.push({methods,notify});return()=>{}}}" +
   "class Client{async sendRequest(method,params){calls.push({method,threadId:params?.threadId,model:params?.model});if(params?.fail)throw Error('boom');return{ok:true}}}" +
   "globalThis.Layout=Layout;globalThis.Manager=Manager;globalThis.Client=Client;";
-const patched = patch.apply(fixture);
-assert.match(patched, /\{activeThreadId:n\}=e;globalThis\.__cxpPublishThread\?\.\(n\);/);
-assert.match(patched, /__cxpInstallThreadAccounts\?\.\(c,this\)/);
-assert.throws(() => patch.apply(fixture + fixture.replaceAll("Layout", "Layout2").replaceAll("Manager", "Manager2").replaceAll("Client", "Client2")), /exactly once/);
+const patched = publicationPatch.apply(patch.apply(fixture));
+assert.match(patched, /globalThis\.__cxpPublishThread\?\.\(n\);/);
+assert.match(patched, /__cxpInstallThreadAccounts\?\.\(this.requestClient,this\)/);
+assert.throws(() => patch.apply(fixture + fixture.replaceAll("Layout", "Layout2").replaceAll("class Manager", "class Manager2").replaceAll("class Client", "class Client2")), /expected 1, found 2/);
 
 const calls = [], activations = [], learned = [], notified = [];
 let view = { activeAccountId: "a", defaultAccountId: "a", accounts: [{ id: "a", usedPercent: 10 }, { id: "b", usedPercent: 20 }, { id: "c", usedPercent: 100 }, { id: "d", usedPercent: 5 }] };
 const routing = { threadOwner: { "t-b": "b", "t-a": "a", "t-c": "c", "t-d": "d", "t-gone": "zzz" }, learnedIneligible: { d: "workspace" } };
-const context = { calls, activations, learned, notified, __cxpClients: {} };
+const context = { calls, activations, learned, notified, __cxpClients: {}, __cxpConfirmedAccountId: 'a' };
 context.globalThis = context;
 context.__codexpp = {
   accountsSync: () => view,
   routingView: () => routing,
   learnThreadOwner: async (threadId, accountId) => { learned.push([threadId, accountId]); routing.threadOwner[threadId] = accountId; return routing; }
 };
-context.__cxpActivate = async (id, opts) => { activations.push([id, opts?.transient === true]); view = { ...view, activeAccountId: id, ...(opts?.transient ? {} : { defaultAccountId: id }) }; return view; };
+context.__cxpActivate = async (id, opts) => { activations.push([id, opts?.transient === true]); context.__cxpConfirmedAccountId=id; view = { ...view, activeAccountId: id, ...(opts?.transient ? {} : { defaultAccountId: id }) }; return view; };
 vm.runInNewContext(patched, context);
 const settle = async () => { for (let i = 0; i < 5; i++) await new Promise(r => setImmediate(r)); };
-const reset = () => { activations.length = 0; calls.length = 0; view = { ...view, activeAccountId: "a", defaultAccountId: "a" }; context.__cxpRunningTurns.clear(); };
+const reset = () => { activations.length = 0; calls.length = 0; view = { ...view, activeAccountId: "a", defaultAccountId: "a" }; context.__cxpConfirmedAccountId='a'; context.__cxpRunningTurns.clear(); };
 
 // Publishing: real ids, null for drafts; selecting a pinned chat does not switch the engine.
 assert.equal(context.Layout({ activeThreadId: "t-b" }), "t-b"); await settle();
@@ -52,16 +52,15 @@ notify("turn/completed", "t-b"); await settle();
 assert.deepEqual(activations, [["b", true], ["a", true]], "completion restores the default account");
 assert.equal(context.__cxpRunningTurns.size, 0); assert.deepEqual(notified.slice(-1), ["turn/completed"], "the original handler still runs");
 
-// While a turn runs, nothing switches: a second chat's turn keeps the current engine account.
+// While b runs, a chat targeting a must not silently consume b's quota.
 reset();
 await run("turn/start", { threadId: "t-b" }); await settle();
-await run("turn/start", { threadId: "t-new" }); await settle();
+await assert.rejects(run("turn/start", { threadId: "t-new" }), /Another account has a running chat/); await settle();
+assert.equal(calls.length, 1, "the other account's turn never reaches the engine");
 assert.deepEqual(activations, [["b", true]], "no switch while another turn is running");
 context.Layout({ activeThreadId: "t-new" }); await settle();
 assert.deepEqual(activations, [["b", true]], "changing chats does not restore the default mid-turn");
 notify("turn/failed", "t-b"); await settle();
-assert.deepEqual(activations, [["b", true]], "one turn still running: keep the account");
-notify("turn/completed", "t-new"); await settle();
 assert.deepEqual(activations, [["b", true], ["a", true]], "last turn done: back to the default");
 
 // Selecting a chat while the engine is transiently elsewhere and idle restores the default.
@@ -69,9 +68,10 @@ reset(); view = { ...view, activeAccountId: "b" };
 context.Layout({ activeThreadId: "t-a" }); await settle();
 assert.deepEqual(activations, [["a", true]]);
 
-// Fallbacks: exhausted, ineligible or missing owners use the default; resume/start/external/foreign untouched.
+// Unusable pins stop instead of silently billing the default; unpinned chats use the default.
 reset();
-for (const threadId of ["t-c", "t-d", "t-gone", "t-new"]) { await run("turn/start", { threadId }); await settle(); notify("turn/completed", threadId); await settle(); }
+for (const threadId of ["t-c", "t-d", "t-gone"]) { await assert.rejects(run("turn/start", { threadId }), /account.*(?:quota|unavailable)/); }
+await run("turn/start", { threadId: "t-new" }); await settle(); notify("turn/completed", "t-new"); await settle();
 assert.deepEqual(activations, [], "default already active: no switches");
 await run("thread/resume", { threadId: "t-b" }); await run("thread/start", { model: "gpt-5" }); await run("turn/start", { threadId: "t-b", model: "cxp/openrouter/x" }); await settle();
 assert.deepEqual(activations, [], "resume, start and external-provider turns never switch");
@@ -97,4 +97,4 @@ assert.equal(pinned.activeAccountId, "a"); assert.deepEqual(learned, [["t-new", 
 assert.equal(context.__cxpThreadOwner("t-new"), "b");
 assert.equal(await context.__cxpPinThread("t-new", "nope"), null); assert.equal(learned.length, 1, "unknown accounts are rejected");
 assert.equal(await context.__cxpPinThread(null, "a"), null);
-console.log("Thread account: publish, transient turn-time switch, default restore after turns and on chat change, running-turn guard, fallbacks and pin-only passed");
+console.log("Thread account: publication, transient switch, default restoration, cross-account and unusable-pin rejection, pin-only passed");

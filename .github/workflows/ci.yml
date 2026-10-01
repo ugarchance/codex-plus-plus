@@ -62,10 +62,12 @@ jobs:
           node tools/test-chatgpt-web-lifecycle.mjs
           node tools/test-auth-refresh.mjs
           node tools/test-windows-integrity.mjs
+          node tools/test-windows-long-paths.mjs
           node tools/test-mac-integrity.mjs
           node tools/test-mac-computer-use-signing.mjs
           node tools/test-mac-keychain.mjs
           node tools/test-app-server-restore.mjs
+          node tools/test-account-isolation.mjs
           node tools/test-thread-account.mjs
           node tools/test-thread-account-header.mjs
           node tools/test-native-pipe-peers.mjs
@@ -74,6 +76,7 @@ jobs:
           node tools/test-pool-stats.mjs
           node --test tools/test-usage-refresh.cjs
           node --test tools/test-providers.cjs
+          node --test tools/test-provider-client.mjs tools/test-home.cjs
           node --test tools/test-claude-peers.mjs
 
       - name: Test apply.mjs --bogus-arg (expect non-zero exit code)

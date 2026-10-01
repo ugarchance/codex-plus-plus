@@ -22,6 +22,7 @@
  */
 
 import { matchOnce } from "../lib/anchor.mjs";
+import { functionAt } from '../lib/ast.mjs';
 
 const NAME = "[A-Za-z_$][\\w$]*";
 const MODAL_BLOCK = "_cxpUsageModalSelector";
@@ -47,6 +48,8 @@ const CHILDREN_PATTERN = `children:\\[(${NAME}),(${NAME}),(${NAME}),(${NAME})\\]
 const HOOKS_PATTERN = `\\(0,(${NAME})\\.useState\\)`;
 
 function reactNamespace(source) {
+  const candidates = new Set([...source.matchAll(new RegExp(HOOKS_PATTERN, 'g'))].map(m => m[1]));
+  if (candidates.size === 1) return [...candidates][0];
   for (const match of source.matchAll(new RegExp(HOOKS_PATTERN, "g"))) {
     const ns = match[1];
     if (source.includes(`(0,${ns}.useEffect)`)) return ns;
@@ -141,8 +144,8 @@ function findStatementEnd(src, from) {
 export default {
   id: "101-usage-modal",
   description: "Per-account reset credit selector and consumption in the usage limits modal",
-  glob: "webview/assets/app-*.js",
-  select: "codex.rateLimitResetPromptModal.closeUsageModal",
+  glob: "webview/assets/*.js",
+  select: "availableResetCredits:",
   marker: MODAL_BLOCK,
   apply(source) {
     const head = matchOnce(source, HEAD_PATTERN, "usage modal component");
@@ -165,11 +168,12 @@ export default {
     ] = head;
 
     const start = head.index;
-    const body = source.slice(start, start + 8500);
+    const componentNode = functionAt(source, 'codex.rateLimitResetPromptModal.closeUsageModal');
+    const body = source.slice(start, componentNode.end);
 
     const [, jsx] = matchOnce(body, JSX_PATTERN, "jsx namespace");
     const children = matchOnce(body, CHILDREN_PATTERN, "modal children array");
-    const react = reactNamespace(source);
+    const react = reactNamespace(body);
 
     const slots = children.slice(1);
     const headerSlot = slots[0];

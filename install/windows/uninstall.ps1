@@ -21,7 +21,7 @@ Info "removing: $DestDir"
 if (Test-Path $DestDir) { Remove-Item $DestDir -Recurse -Force }
 
 if (-not $KeepClaudePeers) {
-  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { "$env:USERPROFILE\.codex" }
+  $codexHome = Join-Path $DataDir 'codex-home'
   & node "$RepoRoot\integrations\claude-peers\install.mjs" --codex-home $codexHome --remove
 }
 

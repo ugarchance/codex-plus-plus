@@ -3,12 +3,13 @@ import vm from "node:vm";
 import patch from "../patch/patches/010-external-auth-refresh.mjs";
 import mainAuth from "../patch/patches/080-main-auth-token.mjs";
 
-for (const modern of [false, true]) {
+for (const modern of [false, true, 'free']) {
   const response = modern
     ? "this.sendAppServerResponse(method,{id:mapId($id),result:{currentTimeAt:0}})"
     : "this.dispatchMessageFromView(`mcp-response`,{hostId:this.hostId,response:{id:mapId($id),result:{currentTimeAt:0}}})";
-  const source = "class Manager{hostId=`local`;onRequest(request){let{id:$id,method:method,params:params}=request;switch(method){case`currentTime/read`:" + response + ";break;case`account/chatgptAuthTokens/refresh`:case`attestation/generate`:break;}}" +
+  const legacySource = "class Manager{hostId=`local`;onRequest(request){let{id:$id,method:method,params:params}=request;switch(method){case`currentTime/read`:" + response + ";break;case`account/chatgptAuthTokens/refresh`:case`attestation/generate`:break;}}" +
     "sendAppServerResponse(method,response){responses.push({method,response})}dispatchMessageFromView(method,envelope){responses.push({method,response:envelope.response})}};globalThis.Manager=Manager;";
+  const source = modern === 'free' ? 'function route({manager:host,serverRequest:request,respond:respond}){let{id:$id,method:method,params:params}=request;switch(method){case`currentTime/read`:respond(method,{id:mapId($id),result:{currentTimeAt:0}});break;case`account/chatgptAuthTokens/refresh`:case`attestation/generate`:break;default:host.logger.warning(`Ignored legacy approval request`);}}class Manager{hostId=`local`;onRequest(request){route({manager:this,serverRequest:request,respond:(method,response)=>responses.push({method,response})})}};globalThis.Manager=Manager;' : legacySource;
   for (const outcome of ["success", "missing", "error"]) {
     const responses = [], calls = [];
     const credentials = { accessToken: "fixture-only" };
@@ -43,4 +44,4 @@ for(const gate of [oldGate,nativeGate]) {
   }
 }
 assert.throws(()=>mainAuth.apply(`function a(r){return ${nativeGate}}`),/match twice/);
-console.log("Auth refresh: old/new response transports, success/missing/error, native/legacy token gates passed");
+console.log("Auth refresh: legacy, method and extracted-handler transports; success/missing/error; native/legacy token gates passed");

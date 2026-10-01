@@ -1,4 +1,6 @@
 import { matchOnce } from "../lib/anchor.mjs";
+import * as acorn from 'acorn';
+import { visit } from '../lib/ast.mjs';
 
 /**
  * Patch 091: Rate Limit Failover
@@ -267,9 +269,27 @@ export const bannerPatch = {
   id: "092-rate-limit-banner",
   description: "One-click switch to an eligible account in the rate limit banner",
   glob: "webview/assets/app-*.js",
-  select: "codex.upsellBanner.plus.headline.noReset",
+  select: ["codex.upsellBanner.plus.headline.noReset", "trackUsageLimitEvents:"],
   marker: FAILOVER_CARD,
   apply(source) {
+    if (source.includes('trackUsageLimitEvents:')) {
+      const tree=acorn.parse(source,{ecmaVersion:'latest',sourceType:'module'}),candidates=[];
+      visit(tree,(n,a)=>{
+        if(n.type!=='ObjectPattern')return;
+        const keys=new Set(n.properties.map(p=>p.key?.name));
+        if(['banner','rateLimitStatus','trackUsageLimitEvents','renderContent'].every(k=>keys.has(k)))candidates.push(a.findLast(f=>f.type==='FunctionDeclaration'));
+      });
+      if(candidates.length!==1)throw Error('Usage banner view contract is not unique');
+      const fn=candidates[0],props=fn.params[0].name,body=source.slice(fn.start,fn.end);
+      const [,react]=matchOnce(body,`\\(0,(${NAME})\\.useRef\\)\\(null\\)`,'usage banner React namespace');
+      const calls=[];visit(fn,n=>{if(n.type==='CallExpression'&&n.callee.type==='SequenceExpression'&&n.callee.expressions.at(-1)?.property?.name==='jsx')calls.push(n.callee.expressions.at(-1).object.name)});
+      const runtimes=[...new Set(calls)];if(runtimes.length!==1)throw Error('Usage banner JSX namespace is not unique');
+      const jsx=runtimes[0],ret=fn.body.body.findLast(n=>n.type==='ReturnStatement');
+      const value=ret.argument.type==='SequenceExpression'?ret.argument.expressions.at(-1):ret.argument;
+      const original=source.slice(value.start,value.end);
+      const wrapped=`${props}.sendBlocked&&!['luna_reserve','image_generation_limit_reached'].includes(${props}.banner?.banner_type)?(0,${jsx}.jsx)(${FAILOVER_CARD},{original:${original}}):${original}`;
+      return source.slice(0,fn.start)+failoverBlock({jsx,react})+'\n'+source.slice(fn.start,value.start)+wrapped+source.slice(value.end);
+    }
     const bannerId = matchOnce(source, BANNER_ID.replace(/[.]/g, "\\."), "upsell banner i18n id");
     const bannerWindow = source.slice(bannerId.index, bannerId.index + BANNER_WINDOW);
     const z0sMatch = matchOnce(bannerWindow, Z0S_RETURN_PATTERN, "Z0s return statement");

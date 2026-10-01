@@ -19,6 +19,7 @@ function toolDefinitions(payload) {
   }
   const names = new Set();
   for (const t of result) {
+    if (t.type !== 'function' && t.type !== 'custom') continue;
     const name = toolName(t.name, t.namespace);
     if (names.has(name)) throw Error('Invalid duplicate tool name.');
     names.add(name);
@@ -173,6 +174,100 @@ function chatRequest(payload, model) {
   }
   return body;
 }
+
+function recursiveSchema(schema) {
+  const visiting = new Set(), checked = new Set();
+  function walk(node) {
+    if (!node || typeof node !== 'object') return false;
+    if (visiting.has(node)) return true;
+    if (checked.has(node)) return false;
+    visiting.add(node);
+    if (typeof node.$ref === 'string' && node.$ref.startsWith('#')) {
+      let target = schema;
+      for (const part of node.$ref.slice(1).split('/').filter(Boolean))
+        target = target?.[decodeURIComponent(part).replaceAll('~1', '/').replaceAll('~0', '~')];
+      if (walk(target)) return true;
+    }
+    for (const [key, value] of Object.entries(node))
+      if (key !== '$defs' && key !== 'definitions' && walk(value)) return true;
+    visiting.delete(node);
+    checked.add(node);
+    return false;
+  }
+  return walk(schema);
+}
+
+function responsesRequest(payload, model) {
+  const body = { ...payload, model: model.id };
+  const definitions = toolDefinitions(payload);
+  const jsonArguments = new Set(definitions.filter(t => t.type === 'function' && recursiveSchema(t.parameters)).map(t => toolName(t.name, t.namespace)));
+  delete body.client_metadata;
+  if (!model.efforts.length) delete body.reasoning;
+  if (payload.tools) body.tools = definitions.map(t => {
+    if (t.type === 'web_search' && t.external_web_access === true) {
+      const { external_web_access, ...tool } = t;
+      return tool;
+    }
+    if (t.type !== 'function' && t.type !== 'custom') return t;
+    const converted = toolsFor({ tools: [t] })[0].function;
+    if (jsonArguments.has(converted.name)) converted.parameters = {
+      type: 'object', properties: { arguments_json: { type: 'string',
+        description: 'The original tool arguments as a JSON string matching this schema: ' + JSON.stringify(t.parameters) } },
+      required: ['arguments_json'], additionalProperties: false,
+    };
+    return { type: 'function', ...converted, ...(t.strict == null ? {} : { strict: t.strict }) };
+  });
+  if (Array.isArray(payload.input)) body.input = payload.input.map(item => {
+    if (item.type === 'reasoning' && item.content === null) {
+      const { content, ...reasoning } = item;
+      return reasoning;
+    }
+    if (item.type === 'function_call' || item.type === 'custom_tool_call') {
+      const converted = { ...item, type: 'function_call', name: toolName(item.name, item.namespace),
+        arguments: item.type === 'custom_tool_call' ? JSON.stringify({ input: item.input }) : item.arguments };
+      if (jsonArguments.has(converted.name)) converted.arguments = JSON.stringify({ arguments_json: item.arguments });
+      delete converted.namespace;
+      delete converted.input;
+      return converted;
+    }
+    return item.type === 'custom_tool_call_output' ? { ...item, type: 'function_call_output' } : item;
+  });
+  if (['function', 'custom'].includes(payload.tool_choice?.type))
+    body.tool_choice = { type: 'function', name: toolName(payload.tool_choice.name, payload.tool_choice.namespace) };
+  return body;
+}
+
+function responsesEvents(payload) {
+  const bindings = new Map(toolDefinitions(payload).map(t => [toolName(t.name, t.namespace), { ...t, jsonArguments: t.type === 'function' && recursiveSchema(t.parameters) }]));
+  const bufferedItems = new Set();
+  function item(value, complete) {
+    if (value?.type !== 'function_call') return value;
+    const binding = bindings.get(value.name);
+    if (!binding) return value;
+    const result = { ...value, name: binding.name };
+    if (binding.namespace) result.namespace = binding.namespace;
+    if (binding.type === 'custom') {
+      bufferedItems.add(value.id);
+      result.type = 'custom_tool_call';
+      result.input = complete ? JSON.parse(value.arguments).input : '';
+      if (typeof result.input !== 'string') throw Error('Custom tool input is missing.');
+      delete result.arguments;
+    } else if (binding.jsonArguments) {
+      bufferedItems.add(value.id);
+      result.arguments = complete ? JSON.parse(value.arguments).arguments_json : '';
+      if (typeof result.arguments !== 'string') throw Error('Tool arguments are missing.');
+      if (complete) JSON.parse(result.arguments); // Native execution still validates the original schema.
+    }
+    return result;
+  }
+  return event => {
+    if (event.type.startsWith('response.function_call_arguments.') && bufferedItems.has(event.item_id)) return null;
+    if (event.item) return { ...event, item: item(event.item, event.type === 'response.output_item.done') };
+    if (event.response?.output) return { ...event, response: { ...event.response, output: event.response.output.map(v => item(v, event.type === 'response.completed' || v.status === 'completed')) } };
+    return event;
+  };
+}
+
 function anthropicRequest(payload, model) {
   const chat = chatRequest(payload, model);
   const messages = [];
@@ -517,6 +612,8 @@ async function translateStream(upstream, res, protocol, payload) {
 module.exports = {
   messagesFor,
   chatRequest,
+  responsesRequest,
+  responsesEvents,
   anthropicRequest,
   sse,
   responseWriter,

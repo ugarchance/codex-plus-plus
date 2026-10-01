@@ -60,7 +60,8 @@ const helpers = [
 export default {
   id: "120-web-models",
   description: "Route local start/resume/fork through the generation-aware gateway and append its Web catalog",
-  glob: "webview/assets/app-initial-*.js",
+  glob: "webview/assets/app-*.js",
+  select: "does not match AppServerManager hostId",
   marker: HELPER,
   apply(source) {
     const [anchor, request, promise, method, params, options, extra] = matchOnce(

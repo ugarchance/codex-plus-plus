@@ -14,6 +14,7 @@ const { extractAll } = patchRequire("@electron/asar");
 
 import patch100 from "../patch/patches/100-resets-bridge.mjs";
 import patch101 from "../patch/patches/101-usage-modal.mjs";
+import { matchesSelect } from "../patch/lib/select.mjs";
 
 async function runTest() {
   console.log("=== T4: Patch Function Test ===");
@@ -42,10 +43,10 @@ async function runTest() {
   console.log("\n--- Testing Patch 101-usage-modal ---");
   const assetsDir = path.join(tmpDir, "webview/assets");
   const appInitialFiles = fs.readdirSync(assetsDir)
-    .filter((file) => file.startsWith("app-") && file.endsWith(".js"))
-    .filter((file) => !patch101.select || fs.readFileSync(path.join(assetsDir, file), "utf-8").includes(patch101.select));
+    .filter((file) => file.endsWith(".js"))
+    .filter((file) => matchesSelect(fs.readFileSync(path.join(assetsDir, file), "utf-8"), patch101.select));
   if (appInitialFiles.length !== 1) {
-    throw new Error(`patch 101 selector matched ${appInitialFiles.length} app-*.js files`);
+    throw new Error(`patch 101 selector matched ${appInitialFiles.length} asset files`);
   }
   const [appInitialFile] = appInitialFiles;
   const appInitialPath = path.join(assetsDir, appInitialFile);

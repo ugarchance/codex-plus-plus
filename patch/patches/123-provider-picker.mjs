@@ -19,7 +19,7 @@ export default {
       const keys = new Set(node.properties.map((p) => p.key?.name));
       if (
         ![
-          "hasWorkModeAccess",
+          "model",
           "lockedModelSlug",
           "powerSelections",
           "modelPickerTriggerConfig",

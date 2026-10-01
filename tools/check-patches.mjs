@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import patches from "../patch/patches/index.mjs";
+import { matchesSelect } from '../patch/lib/select.mjs';
 
 const repoDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const require = createRequire(path.join(repoDir, "patch/apply.mjs"));
@@ -86,7 +87,7 @@ for (const patch of patches) {
   let matches = findFiles(workDir, patch.glob);
   if (patch.select) {
     matches = matches.filter((rel) =>
-      fs.readFileSync(path.join(workDir, rel), "utf-8").includes(patch.select)
+      matchesSelect(fs.readFileSync(path.join(workDir, rel), "utf-8"), patch.select)
     );
   }
   if (matches.length !== 1) {

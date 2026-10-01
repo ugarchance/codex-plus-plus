@@ -1,4 +1,6 @@
 import { matchOnce } from "../lib/anchor.mjs";
+import * as acorn from 'acorn';
+import { visit } from '../lib/ast.mjs';
 
 const NAME = "[A-Za-z_$][\\w$]*";
 const BLOCK = "_cxpAccountBlock";
@@ -54,6 +56,8 @@ const CHILDREN_PATTERN = (usage) => {
 const HOOKS_PATTERN = `\\(0,(${NAME})\\.useState\\)`;
 
 function reactNamespace(source) {
+  const candidates = new Set([...source.matchAll(new RegExp(HOOKS_PATTERN, 'g'))].map(m => m[1]));
+  if (candidates.size === 1) return [...candidates][0];
   for (const match of source.matchAll(new RegExp(HOOKS_PATTERN, "g"))) {
     const ns = match[1];
     if (source.includes(`(0,${ns}.useEffect)`)) return ns;
@@ -228,10 +232,43 @@ function block({ jsx, menu, item, react }) {
 export default {
   id: "040-account-menu",
   description: "Account list, per-account usage, auto-routing toggle, eligibility badge and switching in profile menu",
-  glob: "webview/assets/app-*.js",
-  select: "codex.profileDropdown.settingsPage",
+  glob: "webview/assets/*.js",
+  select: "accountIcon:",
   marker: BLOCK,
   apply(source) {
+    if (source.includes('accountSwitcher:')) {
+      const tree=acorn.parse(source,{ecmaVersion:'latest',sourceType:'module'});
+      const key=p=>p.key?.name??p.key?.value;
+      const props=n=>new Map((n?.properties??[]).map(p=>[key(p),p.value]));
+      const candidates=[];
+      visit(tree,(n,a)=>{if(n.type==='ObjectPattern'&&['accountIcon','accountSwitcher','usageItems','onLogOut'].every(k=>props(n).has(k)))candidates.push({bindings:props(n),fn:a.findLast(f=>f.type==='FunctionDeclaration')});});
+      if(candidates.length!==1)throw Error('Profile dropdown contract is not unique');
+      const {bindings,fn}=candidates[0],usage=bindings.get('usageItems').name,logout=bindings.get('onLogOut').name;
+      const rows=[],separators=[],arrays=[];
+      visit(fn,(n)=>{
+        if(n.type!=='CallExpression')return;
+        const p=props(n.arguments[1]);
+        if(p.has('disabled')&&p.has('leftIcon')&&p.has('onClick'))rows.push(n);
+        if(n.arguments[0]?.property?.name==='Separator')separators.push(n);
+        const children=p.get('children');
+        if(children?.type==='ArrayExpression'&&children.elements.some(e=>e?.type==='Identifier'&&e.name===usage))arrays.push(n);
+      });
+      if(rows.length!==1||arrays.length!==1||!separators.length)throw Error('Profile dropdown render anchors changed');
+      const runtime=arrays[0].callee.expressions.at(-1).object.name;
+      const item=source.slice(rows[0].arguments[0].start,rows[0].arguments[0].end);
+      const menu=separators[0].arguments[0].object.name;
+      const children=props(arrays[0].arguments[1]).get('children');
+      const usageNode=children.elements.find(n=>n?.type==='Identifier'&&n.name===usage);
+      const react=reactNamespace(source);
+      const adapter=`const _cxpMenuAdapter={Separator:_p=>(0,${runtime}.jsx)(${menu}.Separator,_p),ItemIcon:_p=>(0,${runtime}.jsx)(\`span\`,{className:\`shrink-0 \`+(_p.className??\`\`),children:_p.children})};function _cxpNativeMenuItem({LeftIcon,SubText,...p}){return(0,${runtime}.jsx)(${item},{...p,leftIcon:LeftIcon?(0,${runtime}.jsx)(LeftIcon,{className:\`icon-sm\`}):p.leftIcon,children:SubText?(0,${runtime}.jsxs)(\`div\`,{children:[p.children,(0,${runtime}.jsx)(\`div\`,{className:\`text-xs text-secondary\`,children:SubText})]}):p.children})}\n`;
+      const edits=[{start:usageNode.start,end:usageNode.end,text:`(0,${runtime}.jsx)(${BLOCK},{usage:${usage}})`}];
+      // Rewrite the actual logout callback inside this rendered component.
+      let logoutCount=0;
+      visit(fn,n=>{if(n.type==='Property'&&key(n)==='onClick'&&n.value.type==='Identifier'&&n.value.name===logout){logoutCount++;edits.push({start:n.value.start,end:n.value.end,text:`globalThis.__cxpLogOut(${logout})`});}});
+      if(logoutCount!==1)throw Error('Profile logout action is not unique');
+      let result=source;for(const e of edits.sort((a,b)=>b.start-a.start))result=result.slice(0,e.start)+e.text+result.slice(e.end);
+      return adapter+block({jsx:runtime,menu:'_cxpMenuAdapter',item:'_cxpNativeMenuItem',react})+'\n'+result;
+    }
     const head = matchOnce(source, HEAD_PATTERN, "profile menu component");
     const component = head[1];
     const usage = head[3];

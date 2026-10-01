@@ -118,7 +118,7 @@ async function serve(req, res) {
     return fail(res, 401, "Invalid local connection credentials.");
   const match = /^\/route\/([a-f0-9]{32})\/v1\/responses$/.exec(req.url);
   if (req.method !== "POST" || !match)
-    return fail(res, 404, "Bu endpoint desteklenmiyor.");
+    return fail(res, 404, "This endpoint is not supported.");
   const ticket = tickets.get(match[1]);
   if (!ticket)
     return fail(res, 410, "Chat route expired; reopen the chat.");
@@ -151,16 +151,15 @@ async function serve(req, res) {
       m.efforts.length &&
       !m.efforts.includes(p.reasoning.effort)
     )
-      throw Error("Model bu eforu desteklemiyor.");
+      throw Error("This model does not support the selected effort.");
     if (!m.tools && p.tools?.length)
       throw Error("This model does not support tools.");
     const body =
       m.protocol === "responses"
-        ? { ...p, model: m.id }
+        ? wire.responsesRequest(p, m)
         : m.protocol === "chat"
           ? wire.chatRequest(p, m)
           : wire.anthropicRequest(p, m);
-    if (m.protocol === "responses" && !m.efforts.length) delete body.reasoning;
     const suffix =
       m.protocol === "responses"
         ? "/responses"
@@ -202,12 +201,14 @@ async function serve(req, res) {
         "Cache-Control": "no-store",
       });
       let completed = false;
+      const restoreEvent = wire.responsesEvents(p);
       for await (const e of wire.sse(upstream.body)) {
         if (e.type === "response.completed") {
           completed = true;
           usage = e.response?.usage;
         }
-        res.write(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`);
+        const restored = restoreEvent(e);
+        if (restored) res.write(`event: ${restored.type}\ndata: ${JSON.stringify(restored)}\n\n`);
       }
       if (!completed) throw Error("Provider response did not complete.");
       res.end();

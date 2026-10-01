@@ -21,8 +21,8 @@ Codex++ installs a second app next to the original — on macOS next to
 `ChatGPT.app`, on Windows as a per-user copy of the store-installed Codex app —
 without touching the original. Every subscription you connect shows up in the
 profile menu with its own avatar, plan and remaining usage. Click a row to
-switch the whole app to that account — history, projects and skills stay
-shared.
+switch Codex++ to that account. Its history, projects and skills remain
+available in Codex++'s private home.
 
 ![Account menu](docs/account-menu.png)
 
@@ -52,7 +52,7 @@ Windows (the Codex desktop app from the Microsoft Store):
 powershell -ExecutionPolicy Bypass -File install\windows\install.ps1
 ```
 
-Requirements: Windows 10/11, Node.js, the store-installed `OpenAI.Codex`
+Requirements: Windows 10/11, Node.js 22.22 or newer, the store-installed `OpenAI.Codex`
 package. The installer finds the package, copies its payload to
 `%LOCALAPPDATA%\Programs\CodexPP`, patches it and creates Start Menu /
 Desktop shortcuts. No compiler is needed — the shortcut passes
@@ -120,7 +120,6 @@ macOS (environment variables for `install.sh`):
 | `DEST_APP` | `/Applications/Codex++.app` |
 | `BUNDLE_ID` | `com.local.codexpp` |
 | `USER_DATA_DIR` | `~/Library/Application Support/CodexPP` |
-| `CODEX_HOME_SHARED` | `~/.codex` |
 | `SKIP_CLAUDE_PEERS` | unset (set to any value to skip the claude-peers MCP server) |
 
 Windows (parameters for `install.ps1`):
@@ -132,9 +131,18 @@ Windows (parameters for `install.ps1`):
 | `-DataDir` | `%LOCALAPPDATA%\CodexPP` |
 | `-SkipClaudePeers` | off (skips the claude-peers MCP server) |
 
-`CODEX_HOME` is deliberately **shared** with the original app so thread
-history, projects and skills carry over. The user data dir is separate —
-without it the two apps collide on Electron's single-instance lock.
+Codex++ uses `<user-data-dir>/codex-home` as its private `CODEX_HOME`. The
+installer imports the original home once (the inherited `CODEX_HOME`, or
+`~/.codex`). Model and provider selections, account changes, and subsequent
+conversation updates stay private to Codex++. The original CLI configuration
+is never rewritten. See [home isolation](docs/home-isolation.md) for migration
+details. Electron's user data directory is also separate.
+
+The Windows installer enables long-path support in the copied sandbox setup
+helper's manifest. Windows `LongPathsEnabled` must also be enabled when runtime
+caches contain paths longer than 260 characters; the installer does not change
+that system setting. See the measured failure and repair in the
+[26.928 validation log](docs/update-2026-10-01-validation.md).
 
 ## Claude Code sessions as Codex tools
 
@@ -323,8 +331,8 @@ On Windows the engine is `%LOCALAPPDATA%\Programs\CodexPP\resources\codex.exe`.
 
 ## Caveats
 
-- Do **not** run the fork and the original at the same time. A shared
-  `CODEX_HOME` means two app-servers hitting the same SQLite files.
+- Codex++ and the original CLI have separate homes. Imported history is a
+  snapshot; later conversations and settings do not synchronize between them.
 - On macOS an ad-hoc signature invalidates notarization. This is for local use
   only, not for distribution.
 - The `chatgptAuthTokens` auth mode is marked unstable in the protocol schema.

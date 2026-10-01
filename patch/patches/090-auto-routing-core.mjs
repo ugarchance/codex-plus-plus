@@ -1,5 +1,6 @@
 import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
 import { functionAt } from "../lib/ast.mjs";
+import { afterManagerInitialized, managerSelector } from "../lib/manager.mjs";
 
 /**
  * Patch 090: Auto-routing Core
@@ -13,7 +14,7 @@ import { functionAt } from "../lib/ast.mjs";
 
 const MARKER = "_cxpAutoRoutingCore";
 
-const helpers = [
+export const helpers = [
   `;(()=>{`,
   `  const ${MARKER} = true;`,
   `  globalThis.__cxpLearnThread = async (_threadId, _model, _provider) => {`,
@@ -22,6 +23,7 @@ const helpers = [
   `      if (await globalThis.__cxpProviderCall?.('route', _threadId)) return;`,
   `      const _api = globalThis.__codexpp;`,
   `      if (!_api || !_threadId) return;`,
+  `      if (_api.routingView?.()?.threadOwner?.[_threadId]) return;`,
   `      const _view = _api.accountsSync?.();`,
   `      const _activeId = _view?.defaultAccountId ?? _view?.activeAccountId;`,
   `      if (_activeId) {`,
@@ -68,9 +70,18 @@ const UNARCHIVED_DIRECT_PATTERN =
 export default {
   id: "090-auto-routing-core",
   description: "Auto-select best account on new thread creation and learn thread ownership",
-  glob: "webview/assets/app-initial-*.js",
+  glob: "webview/assets/app-*.js",
+  select: managerSelector,
   marker: MARKER,
   apply(source) {
+    if (source.includes('this.notificationReductionContext')) {
+      let patched = afterManagerInitialized(source,
+        'this.addNotificationCallback([`thread/started`,`thread/unarchived`],_n=>{const _t=_n.params?.thread;globalThis.__cxpLearnThread?.(_t?.id??_n.params?.threadId,_t?.model,_t?.modelProvider)})');
+      const createFn = functionAt(source, 'Durable side conversations must start on a local host');
+      const [, collaboration] = matchOnce(source.slice(createFn.start, createFn.end), `collaborationMode:(${NAME})`, 'thread creation model settings');
+      patched = replaceOnce(patched, ANCHOR_CREATE, ANCHOR_CREATE + `await globalThis.__cxpAutoRoute?.(${collaboration}?.settings?.model);`);
+      return `${helpers}\n${patched}`;
+    }
     const started = matchOnce(source, STARTED_PATTERN, "thread/started notification handler");
     const optionalMatch = (pattern, label) => {
       const count = [...source.matchAll(new RegExp(pattern, "g"))].length;

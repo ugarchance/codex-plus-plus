@@ -15,7 +15,7 @@ const NAME = "[A-Za-z_$][\\w$]*";
 const MARKER = "__cxpNavigation";
 const PATTERN =
   `\\.set\\((${NAME}),\\{navigate:(${NAME}),navigateToLocalConversation:(${NAME}),` +
-  `pathname:(${NAME}),prepareNavigation:(${NAME})\\}\\)`;
+  `pathname:(${NAME}),(?:search:${NAME},rootHref:${NAME},)?prepareNavigation:(${NAME})\\}\\)`;
 
 export default {
   id: "094-navigation-bridge",
@@ -23,11 +23,11 @@ export default {
   glob: "webview/assets/app-initial-*.js",
   marker: MARKER,
   apply(source) {
-    const [anchor, , navigate, toLocal] = matchOnce(source, PATTERN, "app navigation bridge installer");
+    const [anchor, , navigate, toLocal, pathname] = matchOnce(source, PATTERN, "app navigation bridge installer");
     return replaceOnce(
       source,
       anchor,
-      `${anchor},globalThis.${MARKER}={navigate:${navigate},navigateToLocalConversation:${toLocal}}`
+      `${anchor},globalThis.${MARKER}={navigate:${navigate},navigateToLocalConversation:${toLocal}},globalThis.__cxpInstallNavigation?.(globalThis.${MARKER},${pathname})`
     );
   }
 };

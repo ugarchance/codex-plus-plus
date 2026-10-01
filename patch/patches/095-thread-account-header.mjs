@@ -1,5 +1,5 @@
-import { matchOnce, replaceOnce } from "../lib/anchor.mjs";
-import { functionAt } from "../lib/ast.mjs";
+import { matchOnce } from "../lib/anchor.mjs";
+import { functionAt, visit } from "../lib/ast.mjs";
 
 /**
  * Patch 095: Account picker in the local thread header
@@ -26,7 +26,7 @@ const NAME = "[A-Za-z_$][\\w$]*";
 const MARKER = "__cxpThreadAccountPicker";
 const SHARE_PATTERN =
   `\\(0,(${NAME})\\.jsx\\)\\((${NAME})\\.HeaderAction,\\{actionId:\`codex-conversation-share\`,align:\`end\`,order:100,` +
-  `unifiedSlotPosition:\`main\`,children:\\(0,\\1\\.jsx\\)\\((${NAME}),\\{conversationId:(${NAME}),hostId:(${NAME})\\}\\)\\}\\)`;
+  `(?:unifiedSlotPosition:\`main\`,)?children:\\(0,\\1\\.jsx\\)\\((${NAME}),\\{conversationId:(${NAME}),hostId:(${NAME})\\}\\)\\}\\)`;
 
 export function helpers({ react, jsx }) {
   return [
@@ -104,12 +104,22 @@ export default {
     const component = functionAt(source, "codex-conversation-share");
     const window = source.slice(component.start, component.end);
     const [, react] = matchOnce(window, `\\(0,(${NAME})\\.useState\\)\\(null\\)`, "React namespace of the local conversation page");
-    const [anchor, jsx, header, , conversation, host] = matchOnce(source, SHARE_PATTERN, "share header action registration");
+    const share = matchOnce(source, SHARE_PATTERN, "share header action registration");
+    const [anchor, jsx, header, , conversation, host] = share;
     const ours =
       `(0,${jsx}.jsx)(${header}.HeaderAction,{actionId:\`cxp-thread-account\`,align:\`end\`,order:99,unifiedSlotPosition:\`main\`,` +
       `children:(0,${jsx}.jsx)(globalThis.${MARKER},{conversationId:${conversation},hostId:${host}})},\`cxp-thread-account\`)`;
     const theirs = anchor.slice(0, -1) + ",`codex-conversation-share`)";
-    const patched = replaceOnce(source, anchor, `(0,${jsx}.jsxs)(${jsx}.Fragment,{children:[${ours},${theirs}]})`);
+    // Unified layouts hide Share itself. Account selection must remain available
+    // in those layouts, while the original Share visibility stays unchanged.
+    const gates=[];
+    visit(component,node=>{
+      if(node.type==='ConditionalExpression'&&node.alternate?.start===share.index&&node.alternate?.end===share.index+anchor.length)gates.push(node);
+    });
+    if(gates.length!==1)throw Error('Expected one Share visibility guard');
+    const gate=gates[0],guard=source.slice(gate.test.start,gate.test.end);
+    const replacement=`${conversation}==null?null:(0,${jsx}.jsxs)(${jsx}.Fragment,{children:[${ours},${guard}?null:${theirs}]})`;
+    const patched=source.slice(0,gate.start)+replacement+source.slice(gate.end);
     return `${helpers({ react, jsx })}\n${patched}`;
   }
 };

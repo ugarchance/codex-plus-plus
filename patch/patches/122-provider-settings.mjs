@@ -8,7 +8,7 @@ const ns = call => call.callee.expressions?.at(-1)?.object;
 function one(items,label){if(items.length!==1)throw Error(label+': expected 1, found '+items.length);return items[0];}
 
 export default {
- id:'122-provider-settings', description:'Render Providers below Analytics inside native Settings',
+ id:'122-provider-settings', description:'Render Providers below native usage settings',
  glob:'webview/assets/settings-page-*.js',select:'settings.nav.clearHostFilter',marker:'cxp-provider-settings-entry',
  apply(source){
   const tree=acorn.parse(source,{ecmaVersion:'latest',sourceType:'module'});
@@ -16,9 +16,16 @@ export default {
   let navBindings;const rows=[];
   visit(nav,n=>{
    if(n.type==='ObjectPattern'&&n.properties.some(p=>key(p)==='settingsSections'))navBindings=new Map(n.properties.map(p=>[key(p),source.slice(p.value.start,p.value.end)]));
-   if(n.type==='ReturnStatement'&&n.argument?.type==='CallExpression'&&n.argument.arguments[2]?.property?.name==='slug')rows.push(n.argument);
+   if(n.type==='ReturnStatement'&&n.argument?.type==='CallExpression'&&n.argument.arguments[2]?.property?.name==='slug'){
+    const child=props(n.argument.arguments[1]).get('children');
+    const contract=props(child?.arguments?.[1]);
+    if(contract.has('isActive')&&contract.has('hideLabel'))rows.push(n.argument);
+   }
   });
   if(!navBindings)throw Error('Settings navigation prop contract missing');
+  // The grouped settings navigation replaced Analytics with Usage. The section
+  // contract distinguishes the new route without relying on a release filename.
+  const usageSection=navBindings.has('groupSettingsSections')?'usage':'analytics';
   const row=one(rows,'Settings section row');const nativeRow=props(row.arguments[1]).get('children');
   const rowProps=props(nativeRow?.arguments?.[1]);if(!rowProps.has('isActive')||!rowProps.has('hideLabel'))throw Error('Settings row contract changed');
   const rowJsx=source.slice(ns(nativeRow).start,ns(nativeRow).end);
@@ -26,14 +33,15 @@ export default {
   const slug=source.slice(row.arguments[2].start,row.arguments[2].end);
   const active=navBindings.get('activeSection'),select=navBindings.get('onSelect');
   const extra=`(0,${rowJsx}.jsx)(${rowType},{'aria-label':'Providers','data-settings-panel-slug':'cxp-providers','data-cxp':'cxp-provider-settings-entry',icon:__cxpProviderIcon,isActive:${active}==='cxp-providers',hideLabel:${source.slice(rowProps.get('hideLabel').start,rowProps.get('hideLabel').end)},onClick:()=>${select}('cxp-providers'),weightClassName:'font-normal',label:'Providers'})`;
-  const replacements=[{start:row.start,end:row.end,text:`(0,${rowJsx}.jsxs)(${rowJsx}.Fragment,{children:[${source.slice(row.start,row.end)},${slug}==='analytics'?${extra}:null]},${slug})`}];
+  const replacements=[{start:row.start,end:row.end,text:`(0,${rowJsx}.jsxs)(${rowJsx}.Fragment,{children:[${source.slice(row.start,row.end)},${slug}===${JSON.stringify(usageSection)}?${extra}:null]},${slug})`}];
   const visibility=[];
   visit(tree,(n,ancestors)=>{if(n.type==='VariableDeclarator'&&n.id?.type==='ObjectPattern'&&n.id.properties.some(p=>key(p)==='activeSettingsSection')&&n.init?.type==='CallExpression')visibility.push({node:n,fn:ancestors.findLast(a=>a.type==='FunctionDeclaration')});});
   const {node:v,fn:page}=one(visibility,'Settings route visibility');
-  const section=v.init.arguments[0];if(section.type!=='Identifier')throw Error('Settings section argument changed');
+  const section=v.init.arguments[0];
+  const sectionText=source.slice(section.start,section.end);
   const original=source.slice(v.init.start,v.init.end);
-  const transformed=original.slice(0,section.start-v.init.start)+`${section.name}==='cxp-providers'?'analytics':${section.name}`+original.slice(section.end-v.init.start);
-  replacements.push({start:v.init.start,end:v.init.end,text:`__cxpProviderVisibility(${transformed},${section.name})`});
+  const transformed=original.slice(0,section.start-v.init.start)+`(${sectionText})==='cxp-providers'?${JSON.stringify(usageSection)}:(${sectionText})`+original.slice(section.end-v.init.start);
+  replacements.push({start:v.init.start,end:v.init.end,text:`__cxpProviderVisibility(${transformed},(${sectionText}))`});
   const activeSection=source.slice(v.id.properties.find(p=>key(p)==='activeSettingsSection').value.start,v.id.properties.find(p=>key(p)==='activeSettingsSection').value.end);
   const suspense=[];
   visit(page,n=>{if(n.type==='CallExpression'&&n.arguments[0]?.type==='MemberExpression'&&n.arguments[0].property.name==='Suspense'&&props(n.arguments[1]).has('fallback'))suspense.push(n);});

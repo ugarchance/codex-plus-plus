@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { extractAll, getRawHeader, createPackageFromStreams } from "@electron/asar";
 import patches from "./patches/index.mjs";
 import * as acorn from "acorn";
+import { matchesSelect } from './lib/select.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -261,7 +262,7 @@ async function main() {
       let matches = findFiles(workDir, patch.glob);
       if (patch.select) {
         matches = matches.filter((rel) =>
-          fs.readFileSync(path.join(workDir, rel), "utf-8").includes(patch.select)
+          matchesSelect(fs.readFileSync(path.join(workDir, rel), "utf-8"), patch.select)
         );
       }
       if (matches.length !== 1) {
